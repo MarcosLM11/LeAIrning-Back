@@ -1,1 +1,23 @@
-spring.application.name=users-service
+server:
+  port: 8081
+
+spring:
+  application:
+    version: 1.0.0
+    name: users-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/usersdb
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+      show-sql: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
