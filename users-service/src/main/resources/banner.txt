@@ -4,8 +4,8 @@
  | |_| \__ \  __/ |  \__ \    ___) |  __/ |   \ V /| | (_|  __/
   \___/|___/\___|_|  |___/   |____/ \___|_|    \_/ |_|\___\___|
 
- :: Spring Boot ::                    (v${spring-boot.version})
- :: Application ::                    ${application.title}
- :: Version ::                        ${application.version}
- :: Author ::                         ${application.author}
+ :: Spring Boot ::                    (v@project.parent.version@)
+ :: Application ::                    @application.title@
+ :: Version ::                        @application.version@
+ :: Author ::                         @application.author@
 ================================================================================
