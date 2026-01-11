@@ -12,7 +12,7 @@ import java.util.List;
 import static lombok.AccessLevel.PRIVATE;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/{version}/users")
 @RequiredArgsConstructor
 @FieldDefaults(level = PRIVATE, makeFinal = true)
 public class UserController {
@@ -20,35 +20,35 @@ public class UserController {
     UserService userService;
 
     //GET users
-    @GetMapping
+    @GetMapping(version = "1.0")
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         var users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
     //GET user
-    @GetMapping("/{userId}")
+    @GetMapping(path = "/{userId}", version = "1.0")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long userId) {
         var user = userService.getUserById(userId);
         return ResponseEntity.ok(user);
     }
 
     //CREATE user
-    @PostMapping
+    @PostMapping(version = "1.0")
     public ResponseEntity<UserDTO> createUser(@RequestBody CreateUserDTO userDTO) {
         var createdUser = userService.createUser(userDTO);
         return ResponseEntity.status(201).build();
     }
 
     //UPDATE user
-    @PutMapping("/{userId}")
+    @PutMapping(path = "/{userId}", version = "1.0")
     public ResponseEntity<UserDTO> updateUser(@PathVariable Long userId, @RequestBody UpdateUserDTO userDTO) {
         var updatedUser = userService.updateUser(userId, userDTO);
         return ResponseEntity.ok(updatedUser);
     }
 
     //DELETE user
-    @DeleteMapping("/{userId}")
+    @DeleteMapping(path = "/{userId}", version = "1.0")
     public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();

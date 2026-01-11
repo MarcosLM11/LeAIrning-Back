@@ -22,6 +22,6 @@ public interface UserMapper {
     @Mapping(target = "lastUpdatedTimestamp", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "password", ignore = true)
-    void updateUserFromDto(UpdateUserDTO dto, @MappingTarget User userEntity);
+    void updateUserFromDto(UpdateUserDTO dto, @MappingTarget User user);
 
 }
