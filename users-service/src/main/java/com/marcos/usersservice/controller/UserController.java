@@ -4,6 +4,7 @@ import com.marcos.usersservice.entity.dto.CreateUserDTO;
 import com.marcos.usersservice.entity.dto.UpdateUserDTO;
 import com.marcos.usersservice.entity.dto.UserDTO;
 import com.marcos.usersservice.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
@@ -35,14 +36,14 @@ public class UserController {
 
     //CREATE user
     @PostMapping(version = "1.0")
-    public ResponseEntity<UserDTO> createUser(@RequestBody CreateUserDTO userDTO) {
-        var createdUser = userService.createUser(userDTO);
+    public ResponseEntity<UserDTO> createUser(@Valid @RequestBody CreateUserDTO userDTO) {
+        userService.createUser(userDTO);
         return ResponseEntity.status(201).build();
     }
 
     //UPDATE user
     @PutMapping(path = "/{userId}", version = "1.0")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Long userId, @RequestBody UpdateUserDTO userDTO) {
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Long userId, @Valid @RequestBody UpdateUserDTO userDTO) {
         var updatedUser = userService.updateUser(userId, userDTO);
         return ResponseEntity.ok(updatedUser);
     }
