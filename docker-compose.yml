@@ -6,11 +6,18 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: usersdb
     ports:
       - '5432:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+
+  qdrant:
+    image: 'qdrant/qdrant:latest'
+    ports:
+      - '6334:6334'
+      - '6333:6333'
 
 volumes:
   postgres-data:
+  qdrant-data:

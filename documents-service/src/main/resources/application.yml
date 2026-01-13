@@ -1,1 +1,54 @@
-spring.application.name=documents-service
+server:
+  port: 8082
+
+spring:
+  application:
+    version: 1.0.0
+    name: documents-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/documentsdb
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: true
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        options:
+          model: llama3.2
+          temperature: 0.7
+    vectorstore:
+      qdrant:
+        collection-name: documents
+        initialize-schema: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+
+# Document storage configuration
+document:
+  storage:
+    location: ./uploads
