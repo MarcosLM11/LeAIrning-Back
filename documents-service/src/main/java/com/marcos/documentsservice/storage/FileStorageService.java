@@ -40,7 +40,7 @@ public class FileStorageService {
             }
 
             // Generate unique filename with UUID
-            String uniqueFilename = UUID.randomUUID().toString() + extension;
+            String uniqueFilename = UUID.randomUUID() + extension;
 
             // Build path: rootPath/userId/year/month/uniqueFilename
             LocalDate now = LocalDate.now();
@@ -92,7 +92,7 @@ public class FileStorageService {
             if (Files.exists(filePath)) {
                 Files.delete(filePath);
             }
-            // Do not throw exception if file doesn't exist
+            // Do not throw an exception if the file doesn't exist
         } catch (IOException e) {
             throw new FileStorageException("Failed to delete file", e);
         }
@@ -103,7 +103,7 @@ public class FileStorageService {
             return "file";
         }
         // Remove path traversal attempts and sanitize
-        String cleaned = filename.replaceAll("\\.\\./", "");
+        String cleaned = filename.replace("\\.\\./", "");
         // Replace special characters with underscore, keeping only alphanumeric, dots, hyphens, and underscores
         return cleaned.replaceAll("[^a-zA-Z0-9._-]", "_");
     }

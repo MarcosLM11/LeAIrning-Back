@@ -29,9 +29,7 @@ public class DocumentController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UploadDocumentResponse> uploadDocuments(
             @RequestParam("files") List<MultipartFile> files,
-            @RequestHeader("X-User-Id") Long userId,
-            @PathVariable String version
-    ) {
+            @RequestHeader("X-User-Id") Long userId) {
         if (files == null || files.isEmpty()) {
             throw new InvalidRequestException("No files provided");
         }
@@ -49,9 +47,7 @@ public class DocumentController {
     @GetMapping("/{documentId}")
     public ResponseEntity<DocumentDTO> getDocumentById(
             @PathVariable Long documentId,
-            @RequestHeader("X-User-Id") Long userId,
-            @PathVariable String version
-    ) {
+            @RequestHeader("X-User-Id") Long userId) {
         DocumentDTO document = documentService.getDocumentById(documentId, userId);
         return ResponseEntity.ok(document);
     }
@@ -61,8 +57,7 @@ public class DocumentController {
             @RequestHeader("X-User-Id") Long userId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String type,
-            Pageable pageable,
-            @PathVariable String version
+            Pageable pageable
     ) {
         Page<DocumentDTO> documents;
 
@@ -82,9 +77,7 @@ public class DocumentController {
     @GetMapping("/{documentId}/download")
     public ResponseEntity<byte[]> downloadDocument(
             @PathVariable Long documentId,
-            @RequestHeader("X-User-Id") Long userId,
-            @PathVariable String version
-    ) {
+            @RequestHeader("X-User-Id") Long userId) {
         byte[] fileContent = documentService.downloadDocument(documentId, userId);
         DocumentDTO document = documentService.getDocumentById(documentId, userId);
 
@@ -100,9 +93,7 @@ public class DocumentController {
     @DeleteMapping("/{documentId}")
     public ResponseEntity<Void> deleteDocument(
             @PathVariable Long documentId,
-            @RequestHeader("X-User-Id") Long userId,
-            @PathVariable String version
-    ) {
+            @RequestHeader("X-User-Id") Long userId) {
         documentService.deleteDocument(documentId, userId);
         return ResponseEntity.noContent().build();
     }
@@ -110,9 +101,7 @@ public class DocumentController {
     @DeleteMapping("/batch")
     public ResponseEntity<BatchDeleteResponse> deleteDocuments(
             @Valid @RequestBody BatchDeleteRequest request,
-            @RequestHeader("X-User-Id") Long userId,
-            @PathVariable String version
-    ) {
+            @RequestHeader("X-User-Id") Long userId) {
         documentService.deleteDocuments(request.documentIds(), userId);
 
         BatchDeleteResponse response = new BatchDeleteResponse(
@@ -125,9 +114,7 @@ public class DocumentController {
 
     @GetMapping("/statistics")
     public ResponseEntity<UserStatisticsResponse> getUserStatistics(
-            @RequestHeader("X-User-Id") Long userId,
-            @PathVariable String version
-    ) {
+            @RequestHeader("X-User-Id") Long userId) {
         long totalDocuments = documentService.getUserDocumentCount(userId);
         long storageUsed = documentService.getUserStorageUsed(userId);
 

@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.util.Set;
 
@@ -28,12 +27,12 @@ public class FileValidator {
     private final Tika tika = new Tika();
 
     public void validate(MultipartFile file) {
-        // 1. Check for null file
+        // 1. Check for a null file
         if (file == null) {
             throw new IllegalArgumentException("File cannot be null");
         }
 
-        // 2. Check for empty file
+        // 2. Check for an empty file
         if (file.isEmpty()) {
             throw new IllegalArgumentException("File cannot be empty");
         }
@@ -44,12 +43,12 @@ public class FileValidator {
             throw new UnsupportedMediaTypeException("Content type cannot be null");
         }
 
-        // 4. Check if MIME type is allowed
+        // 4. Check if the MIME type is allowed
         if (!ALLOWED_MIME_TYPES.contains(contentType)) {
             throw new UnsupportedMediaTypeException("Unsupported file type: " + contentType);
         }
 
-        // 5. Verify actual file type using magic numbers (Tika)
+        // 5. Verify an actual file type using magic numbers (Tika)
         try {
             String detectedType = tika.detect(file.getInputStream());
 
@@ -86,34 +85,23 @@ public class FileValidator {
         }
 
         // PDF must match exactly
-        if (declaredType.equals("application/pdf")) {
-            return detectedType.equals("application/pdf");
-        }
+        return switch (declaredType) {
+            case "application/pdf" -> detectedType.equals("application/pdf");
+            // DOC must match exactly
+            case "application/msword" -> detectedType.equals("application/x-tika-msoffice");
+            // DOCX must match (ZIP-based)
+            case "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ->
+                    detectedType.contains("openxmlformats") ||
+                            detectedType.equals("application/zip") ||
+                            detectedType.equals("application/x-tika-ooxml");
+            // Text-based formats are more flexible than
+            // CSV, plain text, and Markdown can all be detected as text/plain
+            case "text/plain", "text/csv", "text/markdown" -> detectedType.equals("text/plain") ||
+                    detectedType.equals("text/csv") ||
+                    detectedType.equals("text/markdown") ||
+                    detectedType.equals("text/x-web-markdown");
+            default -> false;
+        };
 
-        // DOC must match exactly
-        if (declaredType.equals("application/msword")) {
-            return detectedType.equals("application/msword") ||
-                   detectedType.equals("application/x-tika-msoffice");
-        }
-
-        // DOCX must match (ZIP-based)
-        if (declaredType.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document")) {
-            return detectedType.contains("openxmlformats") ||
-                   detectedType.equals("application/zip") ||
-                   detectedType.equals("application/x-tika-ooxml");
-        }
-
-        // Text-based formats are more flexible
-        // CSV, plain text, and markdown can all be detected as text/plain
-        if (declaredType.equals("text/plain") ||
-            declaredType.equals("text/csv") ||
-            declaredType.equals("text/markdown")) {
-            return detectedType.equals("text/plain") ||
-                   detectedType.equals("text/csv") ||
-                   detectedType.equals("text/markdown") ||
-                   detectedType.equals("text/x-web-markdown");
-        }
-
-        return false;
     }
 }

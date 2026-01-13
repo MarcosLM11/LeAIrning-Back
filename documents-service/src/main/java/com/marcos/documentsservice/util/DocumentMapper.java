@@ -9,6 +9,4 @@ import org.mapstruct.MappingConstants;
 public interface DocumentMapper {
 
     DocumentDTO toDTO(Document document);
-
-    Document toEntity(DocumentDTO documentDTO);
 }

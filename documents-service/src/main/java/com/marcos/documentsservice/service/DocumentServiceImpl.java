@@ -17,16 +17,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
-import java.util.stream.Collectors;
-
 import static lombok.AccessLevel.PRIVATE;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = PRIVATE, makeFinal = true)
 public class DocumentServiceImpl implements DocumentService {
+
+    private static final String DOCUMENT_NOT_FOUND = "Document not found";
 
     DocumentRepository documentRepository;
     FileStorageService fileStorageService;
@@ -39,7 +38,7 @@ public class DocumentServiceImpl implements DocumentService {
     public List<DocumentDTO> uploadDocuments(List<MultipartFile> files, Long userId) {
         return files.stream()
                 .map(file -> uploadSingleDocument(file, userId))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private DocumentDTO uploadSingleDocument(MultipartFile file, Long userId) {
@@ -75,7 +74,6 @@ public class DocumentServiceImpl implements DocumentService {
 
         return switch (contentType) {
             case "application/pdf" -> DocumentType.PDF;
-            case "text/plain" -> DocumentType.TXT;
             case "text/csv" -> DocumentType.CSV;
             case "application/msword" -> DocumentType.DOC;
             case "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> DocumentType.DOCX;
@@ -87,7 +85,7 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public DocumentDTO getDocumentById(Long documentId, Long userId) {
         Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new DocumentNotFoundException("Document not found"));
+                .orElseThrow(() -> new DocumentNotFoundException(DOCUMENT_NOT_FOUND));
 
         validateOwnership(document, userId);
 
@@ -115,7 +113,7 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public byte[] downloadDocument(Long documentId, Long userId) {
         Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new DocumentNotFoundException("Document not found"));
+                .orElseThrow(() -> new DocumentNotFoundException(DOCUMENT_NOT_FOUND));
 
         validateOwnership(document, userId);
 
@@ -126,7 +124,7 @@ public class DocumentServiceImpl implements DocumentService {
     @Transactional
     public void deleteDocument(Long documentId, Long userId) {
         Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new DocumentNotFoundException("Document not found"));
+                .orElseThrow(() -> new DocumentNotFoundException(DOCUMENT_NOT_FOUND));
 
         validateOwnership(document, userId);
 
@@ -137,9 +135,9 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     @Transactional
     public void deleteDocuments(List<Long> documentIds, Long userId) {
-        for (Long documentId : documentIds) {
-            deleteDocument(documentId, userId);
-        }
+        documentIds.forEach(documentId ->
+            deleteDocument(documentId, userId)
+        );
     }
 
     @Override
@@ -157,7 +155,7 @@ public class DocumentServiceImpl implements DocumentService {
 
     public Document getDocumentForProcessing(Long documentId) {
         return documentRepository.findById(documentId)
-                .orElseThrow(() -> new DocumentNotFoundException("Document not found"));
+                .orElseThrow(() -> new DocumentNotFoundException(DOCUMENT_NOT_FOUND));
     }
 
     private void validateOwnership(Document document, Long userId) {
