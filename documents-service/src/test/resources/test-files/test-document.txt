@@ -1,0 +1,11 @@
+Test Document Title
+
+This is a test document used for testing the document processing pipeline.
+
+The document contains multiple paragraphs to test the text extraction and chunking functionality.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+This content will be processed by TikaDocumentReader, split into chunks by TokenTextSplitter, and stored in the vector database.
+
+The test verifies that the pipeline correctly handles text files.

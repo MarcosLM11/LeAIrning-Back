@@ -1,0 +1,40 @@
+# Test configuration for DocumentProcessingPipeline
+
+spring:
+  cloud:
+    function:
+      definition: fileSupplier|documentReader|splitter|vectorStoreConsumer
+
+  integration:
+    poller:
+      fixed-delay: 1000
+      max-messages-per-poll: 1
+
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        options:
+          model: llama3.2
+          temperature: 0.3
+    vectorstore:
+      qdrant:
+        collection-name: test-documents
+        initialize-schema: true
+
+# File Supplier Configuration for tests
+file:
+  supplier:
+    directory: ./target/test-processing-input
+    filename-regex: .*\\.(pdf|docx|doc|txt|csv|md)
+  consumer:
+    mode: ref
+
+# Document Processing Configuration
+document:
+  processing:
+    chunk-size: 500
+    keep-separator: false
+    min-chunk-length: 10
+  storage:
+    root-path: ./target/test-storage

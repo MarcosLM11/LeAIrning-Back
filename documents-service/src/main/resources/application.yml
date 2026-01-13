@@ -36,10 +36,34 @@ spring:
         options:
           model: llama3.2
           temperature: 0.7
+      embedding:
+        options:
+          model: nomic-embed-text
     vectorstore:
       qdrant:
+        host: localhost
+        port: 6333
         collection-name: documents
         initialize-schema: true
+
+  # Spring Cloud Function pipeline configuration
+  cloud:
+    function:
+      definition: documentReader|splitter|vectorStoreConsumer
+
+  # Spring Integration poller for file monitoring
+  integration:
+    poller:
+      fixed-delay: 5000
+      max-messages-per-poll: 1
+
+# File Supplier Configuration (for Spring Cloud Function pipeline)
+file:
+  supplier:
+    directory: ${document.storage.processing-input:./storage/processing-input}
+    filename-regex: .*\\.(pdf|docx|doc|txt|csv|md)
+  consumer:
+    mode: ref
 
 management:
   endpoints:
@@ -52,3 +76,8 @@ management:
 document:
   storage:
     location: ./uploads
+    processing-input: ./storage/processing-input
+  processing:
+    chunk-size: 500
+    keep-separator: false
+    min-chunk-length: 10
