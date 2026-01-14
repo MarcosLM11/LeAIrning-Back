@@ -18,7 +18,7 @@ public class FileStorageService {
 
     private final String storageRootPath;
 
-    public FileStorageService(@Value("${document.storage.root-path:./storage/documents}") String storageRootPath) {
+    public FileStorageService(@Value("${document.storage.location:./uploads}") String storageRootPath) {
         this.storageRootPath = storageRootPath;
     }
 

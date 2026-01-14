@@ -41,15 +41,13 @@ spring:
           model: nomic-embed-text
     vectorstore:
       qdrant:
-        host: localhost
-        port: 6333
         collection-name: documents
         initialize-schema: true
 
   # Spring Cloud Function pipeline configuration
   cloud:
     function:
-      definition: documentReader|splitter|vectorStoreConsumer
+      definition: fileSupplier|documentReader|splitter|vectorStoreConsumer
 
   # Spring Integration poller for file monitoring
   integration:
