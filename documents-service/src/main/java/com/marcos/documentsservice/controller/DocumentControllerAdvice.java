@@ -1,114 +1,110 @@
 package com.marcos.documentsservice.controller;
 
+import com.healthmarketscience.jackcess.ConstraintViolationException;
 import com.marcos.documentsservice.exception.DocumentNotFoundException;
 import com.marcos.documentsservice.exception.InvalidRequestException;
 import com.marcos.documentsservice.exception.UnauthorizedAccessException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import java.net.URI;
+import java.time.Instant;
 
 @RestControllerAdvice
 public class DocumentControllerAdvice {
+    private static final String TIMESTAMP = "timestamp";
 
     @ExceptionHandler(DocumentNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleDocumentNotFoundException(DocumentNotFoundException ex) {
-        Map<String, Object> errorResponse = createErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                ex.getMessage(),
-                "Document not found"
-        );
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ProblemDetail handleDocumentNotFoundException(DocumentNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Document not found");
+        problem.setType(URI.create("https://api.example.com/errors/document-not-found"));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        return problem;
     }
 
     @ExceptionHandler(UnauthorizedAccessException.class)
-    public ResponseEntity<Map<String, Object>> handleUnauthorizedAccessException(UnauthorizedAccessException ex) {
-        Map<String, Object> errorResponse = createErrorResponse(
-                HttpStatus.FORBIDDEN.value(),
-                ex.getMessage(),
-                "Access denied"
-        );
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ProblemDetail handleUnauthorizedAccessException(UnauthorizedAccessException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Access denied");
+        problem.setType(URI.create("https://api.example.com/errors/access-denied"));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        return problem;
     }
 
     @ExceptionHandler(InvalidRequestException.class)
-    public ResponseEntity<Map<String, Object>> handleInvalidRequestException(InvalidRequestException ex) {
-        Map<String, Object> errorResponse = createErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage(),
-                "Invalid request"
-        );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ProblemDetail handleInvalidRequestException(InvalidRequestException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Invalid request");
+        problem.setType(URI.create("https://api.example.com/errors/invalid-request"));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        return problem;
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationException(MethodArgumentNotValidException ex) {
-        Map<String, Object> errorResponse = createErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Validation failed",
-                "Invalid request parameters"
-        );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ProblemDetail handleValidationException(MethodArgumentNotValidException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed");
+        problem.setTitle("Invalid request parameters");
+        problem.setType(URI.create("https://api.example.com/errors/validation-failed"));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        problem.setProperty("errors", ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .toList());
+        return problem;
     }
 
     @ExceptionHandler(MissingRequestHeaderException.class)
-    public ResponseEntity<Map<String, Object>> handleMissingHeaderException(MissingRequestHeaderException ex) {
-        Map<String, Object> errorResponse = createErrorResponse(
-                HttpStatus.UNAUTHORIZED.value(),
-                "Missing required header: " + ex.getHeaderName(),
-                "Authentication required"
-        );
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ProblemDetail handleMissingHeaderException(MissingRequestHeaderException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,
+                "Missing required header: " + ex.getHeaderName());
+        problem.setTitle("Authentication required");
+        problem.setType(URI.create("https://api.example.com/errors/missing-header"));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        return problem;
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGeneralException(Exception ex) {
-        Map<String, Object> errorResponse = createErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "An unexpected error occurred",
-                "Internal server error"
-        );
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ProblemDetail handleGeneralException(Exception ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
+                "An unexpected error occurred");
+        problem.setTitle("Internal server error");
+        problem.setType(URI.create("https://api.example.com/errors/internal-error"));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        return problem;
     }
 
     @ExceptionHandler({
-            org.springframework.web.multipart.support.MissingServletRequestPartException.class,
-            org.springframework.web.bind.MissingServletRequestParameterException.class
+            MissingServletRequestPartException.class,
+            MissingServletRequestParameterException.class
     })
-    public ResponseEntity<Map<String, Object>> handleMissingRequestParts(Exception ex) {
-        Map<String, Object> errorResponse = createErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage(),
-                "Bad request"
-        );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ProblemDetail handleMissingRequestParts(Exception ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Bad request");
+        problem.setType(URI.create("https://api.example.com/errors/missing-parameter"));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        return problem;
     }
 
-    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
-    public ResponseEntity<Map<String, Object>> handleConstraintViolation(
-            jakarta.validation.ConstraintViolationException ex) {
-        Map<String, Object> errorResponse = createErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage(),
-                "Validation failed"
-        );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-
-
-
-    private Map<String, Object> createErrorResponse(int status, String message, String error) {
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("timestamp", LocalDateTime.now());
-        errorResponse.put("status", status);
-        errorResponse.put("error", error);
-        errorResponse.put("message", message);
-        return errorResponse;
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ProblemDetail handleConstraintViolation(jakarta.validation.ConstraintViolationException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Validation failed");
+        problem.setType(URI.create("https://api.example.com/errors/constraint-violation"));
+        problem.setProperty(TIMESTAMP, Instant.now());
+        return problem;
     }
 }
