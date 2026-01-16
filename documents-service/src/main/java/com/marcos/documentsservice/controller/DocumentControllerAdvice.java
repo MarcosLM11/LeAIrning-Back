@@ -2,6 +2,7 @@ package com.marcos.documentsservice.controller;
 
 import com.healthmarketscience.jackcess.ConstraintViolationException;
 import com.marcos.documentsservice.exception.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -14,13 +15,16 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 import java.net.URI;
 import java.time.Instant;
 
+@Slf4j
 @RestControllerAdvice
 public class DocumentControllerAdvice {
     private static final String TIMESTAMP = "timestamp";
+    private static final String DOCUMENTS_SERVICE = "documents-service";
 
     @ExceptionHandler(DocumentNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ProblemDetail handleDocumentNotFoundException(DocumentNotFoundException ex) {
+        log.error(DOCUMENTS_SERVICE + "/Service: {}", ex.getMessage());
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problem.setTitle("Document not found");
         problem.setType(URI.create("https://api.example.com/errors/document-not-found"));
@@ -31,6 +35,7 @@ public class DocumentControllerAdvice {
     @ExceptionHandler(UnauthorizedAccessException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ProblemDetail handleUnauthorizedAccessException(UnauthorizedAccessException ex) {
+        log.error(DOCUMENTS_SERVICE + "/Security: {}", ex.getMessage());
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
         problem.setTitle("Access denied");
         problem.setType(URI.create("https://api.example.com/errors/access-denied"));
@@ -41,6 +46,7 @@ public class DocumentControllerAdvice {
     @ExceptionHandler(InvalidRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ProblemDetail handleInvalidRequestException(InvalidRequestException ex) {
+        log.error(DOCUMENTS_SERVICE + "/Controller: {}", ex.getMessage());
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setTitle("Invalid request");
         problem.setType(URI.create("https://api.example.com/errors/invalid-request"));
@@ -51,6 +57,7 @@ public class DocumentControllerAdvice {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ProblemDetail handleValidationException(MethodArgumentNotValidException ex) {
+        log.error(DOCUMENTS_SERVICE + "/Validation: {}", ex.getMessage());
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed");
         problem.setTitle("Invalid request parameters");
         problem.setType(URI.create("https://api.example.com/errors/validation-failed"));
@@ -64,6 +71,7 @@ public class DocumentControllerAdvice {
     @ExceptionHandler(MissingRequestHeaderException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ProblemDetail handleMissingHeaderException(MissingRequestHeaderException ex) {
+        log.error(DOCUMENTS_SERVICE + "/Security : {}", ex.getMessage());
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,
                 "Missing required header: " + ex.getHeaderName());
         problem.setTitle("Authentication required");
@@ -75,6 +83,7 @@ public class DocumentControllerAdvice {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ProblemDetail handleGeneralException(Exception ex) {
+        log.error(DOCUMENTS_SERVICE + "/App: {}", ex.getMessage());
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
                 "An unexpected error occurred: " + ex.getMessage());
         problem.setTitle("Internal server error");
@@ -89,6 +98,7 @@ public class DocumentControllerAdvice {
     })
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ProblemDetail handleMissingRequestParts(Exception ex) {
+        log.error(DOCUMENTS_SERVICE + "/Request: {}", ex.getMessage());
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setTitle("Bad request");
         problem.setType(URI.create("https://api.example.com/errors/missing-parameter"));
@@ -99,6 +109,7 @@ public class DocumentControllerAdvice {
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ProblemDetail handleConstraintViolation(jakarta.validation.ConstraintViolationException ex) {
+        log.error(DOCUMENTS_SERVICE + "/ConstrainViolation: {}", ex.getMessage());
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setTitle("Validation failed");
         problem.setType(URI.create("https://api.example.com/errors/constraint-violation"));
@@ -109,6 +120,7 @@ public class DocumentControllerAdvice {
     @ExceptionHandler(DocumentReaderException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ProblemDetail handleDocumentReaderException(DocumentReaderException ex) {
+        log.error(DOCUMENTS_SERVICE + "/DocumentReader: {}", ex.getMessage());
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
         problem.setTitle("Document reading error");
         problem.setType(URI.create("https://api.example.com/errors/document-reading-error"));
@@ -119,6 +131,7 @@ public class DocumentControllerAdvice {
     @ExceptionHandler(VectorStoreException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ProblemDetail handleVectorStoreException(VectorStoreException ex) {
+        log.error(DOCUMENTS_SERVICE + "/VectorStore: {}", ex.getMessage());
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
         problem.setTitle("Vector store error");
         problem.setType(URI.create("https://api.example.com/errors/vector-store-error"));

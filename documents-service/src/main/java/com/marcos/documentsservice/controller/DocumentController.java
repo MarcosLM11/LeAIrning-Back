@@ -8,16 +8,26 @@ import com.marcos.documentsservice.service.DocumentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import static lombok.AccessLevel.PRIVATE;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/{version}/documents")
 @RequiredArgsConstructor
@@ -30,7 +40,9 @@ public class DocumentController {
     public ResponseEntity<UploadDocumentResponse> uploadDocuments(
             @RequestParam("files") List<MultipartFile> files,
             @RequestHeader("X-User-Id") Long userId) {
-        if (files == null || files.isEmpty()) {
+        log.info(">>> Request to upload {} documents for userId={}", files.size(), userId);
+
+        if (files.isEmpty()) {
             throw new InvalidRequestException("No files provided");
         }
 
@@ -48,6 +60,7 @@ public class DocumentController {
     public ResponseEntity<DocumentDTO> getDocumentById(
             @PathVariable Long documentId,
             @RequestHeader("X-User-Id") Long userId) {
+        log.info(">>> Request to get document by id={} for userId={}", documentId, userId);
         var document = documentService.getDocumentById(documentId, userId);
         return ResponseEntity.ok(document);
     }
@@ -59,6 +72,7 @@ public class DocumentController {
             @RequestParam(required = false) String type,
             Pageable pageable
     ) {
+        log.info(">>> Request to get documents for userId={} with status={} and type={}", userId, status, type);
         Page<DocumentDTO> documents;
 
         if (status != null) {
@@ -78,6 +92,7 @@ public class DocumentController {
     public ResponseEntity<byte[]> downloadDocument(
             @PathVariable Long documentId,
             @RequestHeader("X-User-Id") Long userId) {
+        log.info(">>> Request to download document id={} for userId={}", documentId, userId);
         var fileContent = documentService.downloadDocument(documentId, userId);
         var document = documentService.getDocumentById(documentId, userId);
 
@@ -94,6 +109,7 @@ public class DocumentController {
     public ResponseEntity<Void> deleteDocument(
             @PathVariable Long documentId,
             @RequestHeader("X-User-Id") Long userId) {
+        log.info(">>> Request to delete document id={} for userId={}", documentId, userId);
         documentService.deleteDocument(documentId, userId);
         return ResponseEntity.noContent().build();
     }
@@ -102,6 +118,7 @@ public class DocumentController {
     public ResponseEntity<BatchDeleteResponse> deleteDocuments(
             @Valid @RequestBody BatchDeleteRequest request,
             @RequestHeader("X-User-Id") Long userId) {
+        log.info(">>> Request to batch delete {} documents for userId={}", request.documentIds().size(), userId);
         documentService.deleteDocuments(request.documentIds(), userId);
 
         var response = new BatchDeleteResponse(
@@ -115,6 +132,7 @@ public class DocumentController {
     @GetMapping("/statistics")
     public ResponseEntity<UserStatisticsResponse> getUserStatistics(
             @RequestHeader("X-User-Id") Long userId) {
+        log.info(">>> Request to get user statistics for userId={}", userId);
         var totalDocuments = documentService.getUserDocumentCount(userId);
         var storageUsed = documentService.getUserStorageUsed(userId);
 

@@ -27,8 +27,6 @@ public class DocumentProcessorServiceImpl implements DocumentProcessorService {
     @Async
     public void processDocumentAsync(Document document) {
         try {
-            LOGGER.info("Copying document to processing pipeline directory: {}", document.getId());
-
             // Create processing directory if it doesn't exist
             Path processingDir = Path.of(processingInputDirectory);
             Files.createDirectories(processingDir);
@@ -39,8 +37,6 @@ public class DocumentProcessorServiceImpl implements DocumentProcessorService {
             // Copy to processing directory where pipeline monitors
             Path targetPath = processingDir.resolve(document.getStoredFilename());
             Files.write(targetPath, fileBytes);
-
-            LOGGER.info("Document copied to pipeline directory successfully: {}", document.getId());
         } catch (IOException e) {
             LOGGER.error("Error copying document to pipeline directory: {}", document.getId(), e);
         }

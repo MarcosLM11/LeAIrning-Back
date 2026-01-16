@@ -12,6 +12,7 @@ import com.marcos.documentsservice.util.DocumentMapper;
 import com.marcos.documentsservice.validator.FileValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import static lombok.AccessLevel.PRIVATE;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = PRIVATE, makeFinal = true)
@@ -42,6 +44,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     private DocumentDTO uploadSingleDocument(MultipartFile file, Long userId) {
+        log.info("Uploading document {} for userId={}", file.getOriginalFilename(), userId);
         fileValidator.validate(file);
 
         String storagePath = fileStorageService.store(file, userId);
@@ -59,6 +62,7 @@ public class DocumentServiceImpl implements DocumentService {
         Document savedDocument = documentRepository.save(document);
         documentProcessorService.processDocumentAsync(savedDocument);
 
+        log.info("Document uploaded successfully");
         return documentMapper.toDTO(savedDocument);
     }
 
