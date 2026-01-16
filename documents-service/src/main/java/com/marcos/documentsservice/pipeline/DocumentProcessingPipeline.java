@@ -1,5 +1,7 @@
 package com.marcos.documentsservice.pipeline;
 
+import com.marcos.documentsservice.exception.DocumentReaderException;
+import com.marcos.documentsservice.exception.VectorStoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
@@ -13,25 +15,16 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
  * Reactive pipeline for RAG document processing.
- *
  * Pipeline flow:
  * 1. fileSupplier: Reads file bytes (configured externally)
  * 2. documentReader: Parses with TikaDocumentReader
- * 3. splitter: Splits into chunks with TokenTextSplitter
+ * 3. Splitter: Splits into chunks with TokenTextSplitter
  * 4. vectorStoreConsumer: Stores in Qdrant with embeddings
  */
 @Component
@@ -65,15 +58,15 @@ public class DocumentProcessingPipeline {
 
                         if (documents.isEmpty()) {
                             LOGGER.warn("TikaDocumentReader returned empty document list");
-                            throw new RuntimeException("Failed to extract text from document");
+                            throw new DocumentReaderException("Failed to extract text from document");
                         }
 
                         Document doc = documents.getFirst();
-                        LOGGER.info("Document extracted successfully. Text length: {}", doc.getText().length());
+                        LOGGER.info("Document extracted successfully.");
                         return doc;
-                    } catch (Exception e) {
+                    } catch (DocumentReaderException e) {
                         LOGGER.error("Error reading document with Tika", e);
-                        throw new RuntimeException("Document reading failed", e);
+                        throw new DocumentReaderException("Document reading failed", e);
                     }
                 })
                 .subscribeOn(Schedulers.boundedElastic());
@@ -103,7 +96,7 @@ public class DocumentProcessingPipeline {
     }
 
     /**
-     * Step 2: Splits document into chunks using a custom TextSplitter.
+     * Step 2: Splits a document into chunks using a custom TextSplitter.
      * This method is useful for testing with a simple splitter that doesn't require external services.
      *
      * @param textSplitter Custom TextSplitter implementation
@@ -140,7 +133,7 @@ public class DocumentProcessingPipeline {
                             LOGGER.info("{} document chunks written to vector store successfully", docCount);
                         } catch (Exception e) {
                             LOGGER.error("Error writing to vector store", e);
-                            throw new RuntimeException("Vector store write failed", e);
+                            throw new VectorStoreException("Vector store write failed", e);
                         }
                     } else {
                         LOGGER.warn("Empty document list, skipping vector store write");

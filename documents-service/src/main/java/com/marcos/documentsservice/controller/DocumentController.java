@@ -34,9 +34,9 @@ public class DocumentController {
             throw new InvalidRequestException("No files provided");
         }
 
-        List<DocumentDTO> uploadedDocuments = documentService.uploadDocuments(files, userId);
+        var uploadedDocuments = documentService.uploadDocuments(files, userId);
 
-        UploadDocumentResponse response = new UploadDocumentResponse(
+        var response = new UploadDocumentResponse(
                 uploadedDocuments,
                 "Documents uploaded successfully. Processing started."
         );
@@ -48,7 +48,7 @@ public class DocumentController {
     public ResponseEntity<DocumentDTO> getDocumentById(
             @PathVariable Long documentId,
             @RequestHeader("X-User-Id") Long userId) {
-        DocumentDTO document = documentService.getDocumentById(documentId, userId);
+        var document = documentService.getDocumentById(documentId, userId);
         return ResponseEntity.ok(document);
     }
 
@@ -78,10 +78,10 @@ public class DocumentController {
     public ResponseEntity<byte[]> downloadDocument(
             @PathVariable Long documentId,
             @RequestHeader("X-User-Id") Long userId) {
-        byte[] fileContent = documentService.downloadDocument(documentId, userId);
-        DocumentDTO document = documentService.getDocumentById(documentId, userId);
+        var fileContent = documentService.downloadDocument(documentId, userId);
+        var document = documentService.getDocumentById(documentId, userId);
 
-        HttpHeaders headers = new HttpHeaders();
+        var headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(document.contentType()));
         headers.setContentDispositionFormData("attachment", document.originalFilename());
 
@@ -104,7 +104,7 @@ public class DocumentController {
             @RequestHeader("X-User-Id") Long userId) {
         documentService.deleteDocuments(request.documentIds(), userId);
 
-        BatchDeleteResponse response = new BatchDeleteResponse(
+        var response = new BatchDeleteResponse(
                 request.documentIds().size(),
                 0
         );
@@ -115,10 +115,10 @@ public class DocumentController {
     @GetMapping("/statistics")
     public ResponseEntity<UserStatisticsResponse> getUserStatistics(
             @RequestHeader("X-User-Id") Long userId) {
-        long totalDocuments = documentService.getUserDocumentCount(userId);
-        long storageUsed = documentService.getUserStorageUsed(userId);
+        var totalDocuments = documentService.getUserDocumentCount(userId);
+        var storageUsed = documentService.getUserStorageUsed(userId);
 
-        UserStatisticsResponse response = new UserStatisticsResponse(totalDocuments, storageUsed);
+        var response = new UserStatisticsResponse(totalDocuments, storageUsed);
 
         return ResponseEntity.ok(response);
     }
