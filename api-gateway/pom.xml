@@ -33,11 +33,18 @@
     <dependencies>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-gateway-server-webmvc</artifactId>
+            <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Netty DNS resolver for macOS - required for correct DNS resolution -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns-native-macos</artifactId>
+            <classifier>osx-aarch_64</classifier>
         </dependency>
 
         <dependency>
@@ -93,6 +100,7 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                    <jvmArguments>--enable-native-access=ALL-UNNAMED</jvmArguments>
                 </configuration>
             </plugin>
         </plugins>

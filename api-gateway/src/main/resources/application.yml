@@ -7,62 +7,68 @@ spring:
 
   cloud:
     gateway:
-      # Configuración global del cliente HTTP
-      httpclient:
-        connect-timeout: 5000
-        response-timeout: 30s
+      server:
+        webflux:
+          #Configuración global de CORS
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins:
+                  - "http://localhost:3000"
+                  - "http://localhost:5173"
+                allowed-methods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowed-headers:
+                  - "*"
+                exposed-headers:
+                  - X-Request-Id
+                  - X-User-Id
+                  - Content-Disposition
+                allow-credentials: true
+                max-age: 3600
+          #Definición de rutas
+          routes:
+            - id: users-service
+              uri: http://localhost:8081
+              predicates:
+                - name: Path
+                  args:
+                    patterns:
+                      - /api/*/users
+                      - /api/*/users/**
 
-      # Definición de rutas
-      routes:
-        - id: users-service
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/*/users/**
-          filters:
-            - AddRequestHeader=X-Forwarded-By, api-gateway
+            - id: documents-service
+              uri: http://localhost:8082
+              predicates:
+                - name: Path
+                  args:
+                    patterns:
+                      - /api/*/documents
+                      - /api/*/documents/**
 
-        - id: documents-service
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/*/documents/**
-          filters:
-            - AddRequestHeader=X-Forwarded-By, api-gateway
-
-        - id: auth-service
-          uri: http://localhost:8083
-          predicates:
-            - Path=/api/*/auth/**
-          filters:
-            - AddRequestHeader=X-Forwarded-By, api-gateway
-
-      # Configuración CORS global
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowed-origins:
-              - "http://localhost:3000"
-              - "http://localhost:5173"
-            allowed-methods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
-            allowed-headers:
-              - "*"
-            exposed-headers:
-              - X-Request-Id
-              - X-User-Id
-              - Content-Disposition
-            allow-credentials: true
-            max-age: 3600
+            - id: auth-service
+              uri: http://localhost:8083
+              predicates:
+                - name: Path
+                  args:
+                    patterns:
+                      - /api/*/auth
+                      - /api/*/auth/**
 
 # Actuator para health checks y visualización de rutas
 management:
   endpoints:
     web:
       exposure:
-        include: health, info, gateway
+        include: health, info, gateway, metrics
   endpoint:
+    health:
+      show-details: always
     gateway:
       enabled: true
+
+# Logging
