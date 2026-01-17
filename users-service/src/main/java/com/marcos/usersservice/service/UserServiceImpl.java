@@ -1,5 +1,6 @@
 package com.marcos.usersservice.service;
 
+import com.marcos.usersservice.entity.Role;
 import com.marcos.usersservice.entity.dto.CreateUserDTO;
 import com.marcos.usersservice.entity.dto.UpdateUserDTO;
 import com.marcos.usersservice.entity.dto.UserDTO;
@@ -9,6 +10,7 @@ import com.marcos.usersservice.util.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import static lombok.AccessLevel.PRIVATE;
@@ -21,6 +23,7 @@ public class UserServiceImpl implements UserService {
 
     UserRepository userRepository;
     UserMapper userMapper;
+    PasswordEncoder passwordEncoder;
 
     @Override
     public List<UserDTO> getAllUsers() {
@@ -43,6 +46,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO createUser(CreateUserDTO userDTO) {
         var entity = userMapper.toUser(userDTO);
+        entity.setPassword(passwordEncoder.encode(entity.getPassword()));
+        entity.setRole(Role.USER);
         var savedUser = userRepository.save(entity);
         log.info("User with id: {} and username: {} created", savedUser.getId(), savedUser.getUsername());
         return userMapper.toResponse(savedUser);

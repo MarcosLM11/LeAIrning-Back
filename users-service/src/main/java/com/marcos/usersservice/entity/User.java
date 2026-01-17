@@ -2,6 +2,8 @@ package com.marcos.usersservice.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -19,7 +21,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "users", indexes = {
         @Index(name = "idx_users_username", columnList = "username"),
-        @Index(name = "idx_users_email", columnList = "email")
+        @Index(name = "idx_users_email", columnList = "email"),
+        @Index(name = "idx_users_role", columnList = "role")
 })
 public class User extends AbstractAuditableEntity {
     @Id
@@ -31,4 +34,7 @@ public class User extends AbstractAuditableEntity {
     private String password;
     @Column
     private String email;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER;
 }

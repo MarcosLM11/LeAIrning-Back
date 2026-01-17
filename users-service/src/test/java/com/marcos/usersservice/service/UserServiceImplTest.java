@@ -13,9 +13,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -29,6 +28,9 @@ class UserServiceImplTest {
 
     @Mock
     private UserMapper userMapper;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -56,6 +58,7 @@ class UserServiceImplTest {
     void shouldCreateUserSuccessfully() {
         // Given
         when(userMapper.toUser(createUserDTO)).thenReturn(user);
+        when(passwordEncoder.encode("password123")).thenReturn("hashedPassword");
         when(userRepository.save(user)).thenReturn(user);
         when(userMapper.toResponse(user)).thenReturn(userDTO);
 
@@ -69,6 +72,7 @@ class UserServiceImplTest {
         assertEquals(userDTO.email(), result.email());
 
         verify(userMapper).toUser(createUserDTO);
+        verify(passwordEncoder).encode("password123");
         verify(userRepository).save(user);
         verify(userMapper).toResponse(user);
     }
@@ -105,7 +109,7 @@ class UserServiceImplTest {
         RuntimeException exception = assertThrows(RuntimeException.class,
                 () -> userService.getUserById(userId));
 
-        assertEquals("User not found", exception.getMessage());
+        assertEquals("User not found with id: 1", exception.getMessage());
         verify(userRepository).findById(userId);
         verify(userMapper, never()).toResponse(any());
     }
@@ -153,7 +157,7 @@ class UserServiceImplTest {
         RuntimeException exception = assertThrows(RuntimeException.class,
                 () -> userService.updateUser(userId, updateUserDTO));
 
-        assertEquals("User not found", exception.getMessage());
+        assertEquals("User not found with id: 1", exception.getMessage());
         verify(userRepository).findById(userId);
         verify(userMapper, never()).updateUserFromDto(any(), any());
         verify(userRepository, never()).save(any());
@@ -186,7 +190,7 @@ class UserServiceImplTest {
         RuntimeException exception = assertThrows(RuntimeException.class,
                 () -> userService.deleteUser(userId));
 
-        assertEquals("User not found", exception.getMessage());
+        assertEquals("User not found with id: 1", exception.getMessage());
         verify(userRepository).existsById(userId);
         verify(userRepository, never()).deleteById(userId);
     }
