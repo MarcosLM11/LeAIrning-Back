@@ -6,7 +6,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -21,46 +21,42 @@ public class GlobalFiltersConfig implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        long startTime = System.currentTimeMillis();
-
-        ServerHttpRequest request = exchange.getRequest();
-
-        // Generate X-Request-Id if not present
-        String requestId = request.getHeaders().getFirst(REQUEST_ID_HEADER);
-        if (requestId == null || requestId.isBlank()) {
-            requestId = UUID.randomUUID().toString();
-        }
-
-        // Log incoming request
-        String method = request.getMethod().name();
-        String path = request.getURI().getPath();
-        String userId = request.getHeaders().getFirst(USER_ID_HEADER);
-
-        log.info(">>> [{}] {} {} - User: {}",
-                requestId, method, path, userId != null ? userId : "anonymous");
-
-        // Mutate request to add X-Request-Id header for downstream services
-        final String finalRequestId = requestId;
-        ServerHttpRequest mutatedRequest = request.mutate()
-                .header(REQUEST_ID_HEADER, finalRequestId)
-                .build();
-
-        // Add X-Request-Id to response for client traceability
-        ServerHttpResponse response = exchange.getResponse();
-        response.getHeaders().add(REQUEST_ID_HEADER, finalRequestId);
-
-        return chain.filter(exchange.mutate().request(mutatedRequest).build())
+        var startTime = System.currentTimeMillis();
+        var request = exchange.getRequest();
+        var response = exchange.getResponse();
+        var method = request.getMethod().name();
+        var path = request.getURI().getPath();
+        var requestId = getOrGenerateRequestId(request);
+        response.getHeaders().add(REQUEST_ID_HEADER, requestId);
+        return exchange.getPrincipal()
+                .cast(JwtAuthenticationToken.class)
+                .map(jwt -> jwt.getToken().getSubject())
+                .defaultIfEmpty("anonymous")
+                .flatMap(userId -> {
+                    log.info(">>> [{}] {} {} - User: {}", requestId, method, path, userId);
+                    var mutatedRequest = request.mutate()
+                            .header(REQUEST_ID_HEADER, requestId)
+                            .headers(h -> h.remove(USER_ID_HEADER))
+                            .header(USER_ID_HEADER, userId)
+                            .build();
+                    return chain.filter(exchange.mutate().request(mutatedRequest).build());
+                })
                 .then(Mono.fromRunnable(() -> {
-                    long duration = System.currentTimeMillis() - startTime;
+                    var duration = System.currentTimeMillis() - startTime;
                     log.info("<<< [{}] {} {} - Status: {} - Duration: {}ms",
-                            finalRequestId, method, path,
+                            requestId, method, path,
                             response.getStatusCode() != null ? response.getStatusCode().value() : "unknown",
                             duration);
                 }));
     }
 
+    private String getOrGenerateRequestId(ServerHttpRequest request) {
+        var requestId = request.getHeaders().getFirst(REQUEST_ID_HEADER);
+        return (requestId == null || requestId.isBlank()) ? UUID.randomUUID().toString() : requestId;
+    }
+
     @Override
     public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE;
+        return -1; // Run after security filter
     }
 }

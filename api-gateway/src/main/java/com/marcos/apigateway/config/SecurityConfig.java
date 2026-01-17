@@ -30,6 +30,7 @@ public class SecurityConfig {
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers("/api/*/auth/**").permitAll()
                         .pathMatchers("/actuator/**").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/*/users").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/*/users").hasRole("ADMIN")
                         .pathMatchers(HttpMethod.DELETE, "/api/*/users/**").hasRole("ADMIN")
                         .anyExchange().authenticated()
