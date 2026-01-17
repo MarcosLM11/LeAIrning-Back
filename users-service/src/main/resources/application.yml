@@ -5,15 +5,18 @@ spring:
   application:
     version: 1.0.0
     name: users-service
+
   datasource:
     url: jdbc:postgresql://localhost:5432/usersdb
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: none
       show-sql: false
+
   flyway:
     enabled: true
     baseline-on-migrate: true
