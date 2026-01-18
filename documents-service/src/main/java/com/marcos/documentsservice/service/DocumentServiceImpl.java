@@ -7,7 +7,7 @@ import com.marcos.documentsservice.entity.dto.DocumentDTO;
 import com.marcos.documentsservice.exception.DocumentNotFoundException;
 import com.marcos.documentsservice.exception.UnauthorizedAccessException;
 import com.marcos.documentsservice.repository.DocumentRepository;
-import com.marcos.documentsservice.storage.FileStorageService;
+import com.marcos.documentsservice.storage.StorageService;
 import com.marcos.documentsservice.util.DocumentMapper;
 import com.marcos.documentsservice.validator.FileValidator;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 import java.util.List;
 import static lombok.AccessLevel.PRIVATE;
 
@@ -30,7 +31,7 @@ public class DocumentServiceImpl implements DocumentService {
     private static final String DOCUMENT_NOT_FOUND = "Document not found";
 
     DocumentRepository documentRepository;
-    FileStorageService fileStorageService;
+    StorageService storageService;
     DocumentMapper documentMapper;
     FileValidator fileValidator;
     DocumentProcessorService documentProcessorService;
@@ -46,24 +47,28 @@ public class DocumentServiceImpl implements DocumentService {
     private DocumentDTO uploadSingleDocument(MultipartFile file, Long userId) {
         log.info("Uploading document {} for userId={}", file.getOriginalFilename(), userId);
         fileValidator.validate(file);
-
-        String storagePath = fileStorageService.store(file, userId);
-
-        Document document = new Document();
-        document.setUserId(userId);
-        document.setOriginalFilename(file.getOriginalFilename());
-        document.setStoredFilename(extractFilename(storagePath));
-        document.setContentType(file.getContentType());
-        document.setFileSize(file.getSize());
-        document.setDocumentType(determineDocumentType(file.getContentType()));
-        document.setStatus(ProcessingStatus.UPLOADED);
-        document.setStoragePath(storagePath);
-
-        Document savedDocument = documentRepository.save(document);
-        documentProcessorService.processDocumentAsync(savedDocument);
-
-        log.info("Document uploaded successfully");
-        return documentMapper.toDTO(savedDocument);
+        try {
+            var storagePath = storageService.store(
+                    file.getBytes(),
+                    file.getOriginalFilename(),
+                    file.getContentType(),
+                    userId);
+            var document = new Document();
+            document.setUserId(userId);
+            document.setOriginalFilename(file.getOriginalFilename());
+            document.setStoredFilename(extractFilename(storagePath));
+            document.setContentType(file.getContentType());
+            document.setFileSize(file.getSize());
+            document.setDocumentType(determineDocumentType(file.getContentType()));
+            document.setStatus(ProcessingStatus.UPLOADED);
+            document.setStoragePath(storagePath);
+            var savedDocument = documentRepository.save(document);
+            documentProcessorService.processDocumentAsync(savedDocument);
+            log.info("Document uploaded successfully");
+            return documentMapper.toDTO(savedDocument);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read file content", e);
+        }
     }
 
     private String extractFilename(String storagePath) {
@@ -121,7 +126,7 @@ public class DocumentServiceImpl implements DocumentService {
 
         validateOwnership(document, userId);
 
-        return fileStorageService.load(document.getStoragePath());
+        return storageService.load(document.getStoragePath());
     }
 
     @Override
@@ -132,7 +137,7 @@ public class DocumentServiceImpl implements DocumentService {
 
         validateOwnership(document, userId);
 
-        fileStorageService.delete(document.getStoragePath());
+        storageService.delete(document.getStoragePath());
         documentRepository.delete(document);
     }
 

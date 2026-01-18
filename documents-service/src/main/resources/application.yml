@@ -79,3 +79,14 @@ document:
     chunk-size: 500
     keep-separator: false
     min-chunk-length: 10
+
+# Storage abstraction configuration
+storage:
+  type: minio
+  minio:
+    endpoint: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin123
+    documents-bucket: leairning-documents
+    processing-bucket: leairning-processing
+    auto-create-buckets: true
