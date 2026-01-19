@@ -3,6 +3,7 @@ package com.marcos.documentsservice;
 import com.marcos.documentsservice.config.JpaAuditingConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -10,8 +11,10 @@ import org.springframework.ai.vectorstore.VectorStore;
 @Import({TestcontainersConfiguration.class, JpaAuditingConfiguration.class})
 @SpringBootTest(properties = {
         "spring.ai.vectorstore.qdrant.initialize-schema=false",
-        "spring.cloud.function.definition="
+        "spring.cloud.function.definition=",
+        "spring.cloud.compatibility-verifier.enabled=false"
 })
+@ActiveProfiles("test")
 class DocumentsServiceApplicationTests {
 
     @MockitoBean
