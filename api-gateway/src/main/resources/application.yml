@@ -34,21 +34,21 @@ spring:
           #Definición de rutas
           routes:
             - id: users-service
-              uri: http://localhost:8081
+              uri: lb://users-service
               predicates:
                 - Path=/api/*/users/**
               filters:
                 - AddRequestHeader=X-Forwarded-By, api-gateway
 
             - id: documents-service
-              uri: http://localhost:8082
+              uri: lb://documents-service
               predicates:
                 - Path=/api/*/documents/**
               filters:
                 - AddRequestHeader=X-Forwarded-By, api-gateway
 
             - id: auth-service
-              uri: http://localhost:8083
+              uri: lb://auth-service
               predicates:
                 - Path=/api/*/auth/**
               filters:
@@ -56,6 +56,16 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET:dev-secret-key-minimum-32-characters-long}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_USER:admin}:${EUREKA_PASSWORD:admin123}@${EUREKA_HOST:localhost}:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}
 
 management:
   endpoints:

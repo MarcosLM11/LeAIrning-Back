@@ -46,6 +46,8 @@ spring:
 
   # Spring Cloud Function pipeline configuration
   cloud:
+    compatibility-verifier:
+      enabled: false
     function:
       definition: fileSupplier|documentReader|splitter|vectorStoreConsumer
 
@@ -62,6 +64,16 @@ file:
     filename-regex: .*\\.(pdf|docx|doc|txt|csv|md)
   consumer:
     mode: ref
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_USER:admin}:${EUREKA_PASSWORD:admin123}@${EUREKA_HOST:localhost}:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}
 
 management:
   endpoints:
