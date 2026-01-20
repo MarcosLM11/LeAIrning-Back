@@ -1,4 +1,5 @@
 services:
+  # Infrastructure
   postgres:
     image: 'postgres:16-alpine'
     container_name: learning-postgres
@@ -11,12 +12,20 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   qdrant:
     image: 'qdrant/qdrant:latest'
+    container_name: learning-qdrant
     ports:
       - '6334:6334'
       - '6333:6333'
+    volumes:
+      - qdrant-data:/qdrant/storage
 
   minio:
     image: minio/minio:RELEASE.2024-12-18T13-15-44Z
@@ -35,6 +44,119 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+
+  # Microservices
+  discovery-service:
+    image: discovery-service:1
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    environment:
+      EUREKA_USER: admin
+      EUREKA_PASSWORD: admin123
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://admin:admin123@localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  config-server:
+    image: config-server:1
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      EUREKA_HOST: discovery-service
+      EUREKA_USER: admin
+      EUREKA_PASSWORD: admin123
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://configadmin:configsecret@localhost:8888/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  api-gateway:
+    image: api-gateway:1
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CONFIG_IMPORT: optional:configserver:http://configadmin:configsecret@config-server:8888
+      EUREKA_HOST: discovery-service
+      EUREKA_USER: admin
+      EUREKA_PASSWORD: admin123
+      JWT_SECRET: dev-secret-key-minimum-32-characters-long
+    depends_on:
+      config-server:
+        condition: service_healthy
+
+  auth-service:
+    image: auth-service:1
+    container_name: auth-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CONFIG_IMPORT: optional:configserver:http://configadmin:configsecret@config-server:8888
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/authdb
+      EUREKA_HOST: discovery-service
+      EUREKA_USER: admin
+      EUREKA_PASSWORD: admin123
+      JWT_SECRET: dev-secret-key-minimum-32-characters-long
+    depends_on:
+      postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  users-service:
+    image: users-service:1
+    container_name: users-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CONFIG_IMPORT: optional:configserver:http://configadmin:configsecret@config-server:8888
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/usersdb
+      EUREKA_HOST: discovery-service
+      EUREKA_USER: admin
+      EUREKA_PASSWORD: admin123
+    depends_on:
+      postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  documents-service:
+    image: documents-service:1
+    container_name: documents-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CONFIG_IMPORT: optional:configserver:http://configadmin:configsecret@config-server:8888
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/documentsdb
+      SPRING_AI_OLLAMA_BASE_URL: http://host.docker.internal:11434
+      SPRING_AI_VECTORSTORE_QDRANT_HOST: qdrant
+      STORAGE_MINIO_ENDPOINT: http://minio:9000
+      EUREKA_HOST: discovery-service
+      EUREKA_USER: admin
+      EUREKA_PASSWORD: admin123
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      minio:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
 
 volumes:
   postgres-data:

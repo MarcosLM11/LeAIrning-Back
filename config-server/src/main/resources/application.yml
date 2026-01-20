@@ -10,7 +10,7 @@ spring:
     config:
       server:
         native:
-          search-locations: file:/Users/marcos/Projects/LeAIrning/LeAIrning-Back/config-repo
+          search-locations: ${CONFIG_REPO_PATH:file:/Users/marcos/Projects/LeAIrning/LeAIrning-Back/config-repo}
   security:
     user:
       name: ${CONFIG_USER:configadmin}
