@@ -29,6 +29,9 @@
     <properties>
         <java.version>25</java.version>
         <spring-cloud.version>2025.1.0</spring-cloud.version>
+        <application.title>Auth Service</application.title>
+        <application.version>1.0.0</application.version>
+        <application.author>Marcos López Marín</application.author>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -87,6 +90,16 @@
             <artifactId>flyway-database-postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- Logging -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>8.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -142,6 +155,12 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

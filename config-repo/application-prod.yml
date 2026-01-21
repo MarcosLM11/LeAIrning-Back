@@ -1,0 +1,16 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# PRODUCTION PROFILE - SHARED CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Logging for production
+logging:
+  level:
+    root: WARN
+    com.marcos: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+
+management:
+  tracing:
+    sampling:
+      probability: 0.1  # 10% sampling in prod to reduce overhead

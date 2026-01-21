@@ -1,0 +1,34 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# SHARED CONFIGURATION FOR ALL SERVICES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.marcos: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN
+    org.apache.kafka: WARN
+    io.micrometer: WARN
+
+# Distributed Tracing
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: w3c
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, loggers, refresh
+  endpoint:
+    loggers:
+      enabled: true
+    health:
+      show-details: when_authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}

@@ -1,0 +1,16 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEVELOPMENT PROFILE - SHARED CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Logging for development
+logging:
+  level:
+    com.marcos: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0  # 100% sampling in dev
