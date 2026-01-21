@@ -3,18 +3,36 @@ server:
 
 spring:
   application:
-    name: board-game.buddy
+    name: chat-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  config:
+    import: optional:configserver:http://${CONFIG_USER:configadmin}:${CONFIG_PASSWORD:configsecret}@${CONFIG_HOST:localhost}:8888
   ai:
     ollama:
       base-url: http://localhost:11434
       init:
         pull-model-strategy: when_missing
         timeout: 5m
+      chat:
         options:
-          model: llama3.2:latest
-          # top-k: 3 # limit to top K tokens
-          # top-p: 0.7 # take from top tokens until cumulative probability reaches this value
-          # temperature: 0.1 # lower temperature for less random responses
+          model: llama3.2
+      embedding:
+        options:
+          model: nomic-embed-text
     vectorstore:
       qdrant:
-        collection-name: GameRules
+        host: localhost
+        port: 6334
+        collection-name: documents
+
+
+logging:
+  level:
+    org:
+      zalando:
+        logbook: TRACE
+
+logbook:
+  format:
+    style: http
