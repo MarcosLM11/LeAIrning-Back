@@ -1,0 +1,20 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: board-game.buddy
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      init:
+        pull-model-strategy: when_missing
+        timeout: 5m
+        options:
+          model: llama3.2:latest
+          # top-k: 3 # limit to top K tokens
+          # top-p: 0.7 # take from top tokens until cumulative probability reaches this value
+          # temperature: 0.1 # lower temperature for less random responses
+    vectorstore:
+      qdrant:
+        collection-name: GameRules
