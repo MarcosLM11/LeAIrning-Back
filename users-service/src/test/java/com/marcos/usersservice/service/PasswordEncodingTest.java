@@ -4,6 +4,7 @@ import com.marcos.usersservice.entity.Role;
 import com.marcos.usersservice.entity.User;
 import com.marcos.usersservice.entity.dto.CreateUserDTO;
 import com.marcos.usersservice.entity.dto.UserDTO;
+import com.marcos.usersservice.event.NotificationEventPublisher;
 import com.marcos.usersservice.reposiroty.UserRepository;
 import com.marcos.usersservice.util.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +15,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -30,12 +30,14 @@ class PasswordEncodingTest {
     private UserMapper userMapper;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private NotificationEventPublisher notificationPublisher;
 
     private UserServiceImpl userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserServiceImpl(userRepository, userMapper, passwordEncoder);
+        userService = new UserServiceImpl(userRepository, userMapper, passwordEncoder, notificationPublisher);
     }
 
     @Test

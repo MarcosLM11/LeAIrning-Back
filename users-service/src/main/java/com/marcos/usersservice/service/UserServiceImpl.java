@@ -4,6 +4,7 @@ import com.marcos.usersservice.entity.Role;
 import com.marcos.usersservice.entity.dto.CreateUserDTO;
 import com.marcos.usersservice.entity.dto.UpdateUserDTO;
 import com.marcos.usersservice.entity.dto.UserDTO;
+import com.marcos.usersservice.event.NotificationEventPublisher;
 import com.marcos.usersservice.exception.UserNotFoundException;
 import com.marcos.usersservice.reposiroty.UserRepository;
 import com.marcos.usersservice.util.UserMapper;
@@ -24,6 +25,7 @@ public class UserServiceImpl implements UserService {
     UserRepository userRepository;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
+    NotificationEventPublisher notificationPublisher;
 
     @Override
     public List<UserDTO> getAllUsers() {
@@ -50,6 +52,7 @@ public class UserServiceImpl implements UserService {
         entity.setRole(Role.USER);
         var savedUser = userRepository.save(entity);
         log.info("User with id: {} and username: {} created", savedUser.getId(), savedUser.getUsername());
+        notificationPublisher.publishUserRegistered(savedUser);
         return userMapper.toResponse(savedUser);
     }
 

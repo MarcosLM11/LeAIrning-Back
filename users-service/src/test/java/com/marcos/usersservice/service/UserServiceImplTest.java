@@ -4,6 +4,7 @@ import com.marcos.usersservice.entity.User;
 import com.marcos.usersservice.entity.dto.CreateUserDTO;
 import com.marcos.usersservice.entity.dto.UpdateUserDTO;
 import com.marcos.usersservice.entity.dto.UserDTO;
+import com.marcos.usersservice.event.NotificationEventPublisher;
 import com.marcos.usersservice.reposiroty.UserRepository;
 import com.marcos.usersservice.util.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +32,9 @@ class UserServiceImplTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private NotificationEventPublisher notificationPublisher;
 
     @InjectMocks
     private UserServiceImpl userService;
