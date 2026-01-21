@@ -10,16 +10,6 @@
         <module name="config-server" />
         <module name="discovery-service" />
       </profile>
-      <profile name="Annotation profile for auth-service" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
-        </processorPath>
-        <module name="api-gateway" />
-        <module name="auth-service" />
-      </profile>
       <profile name="Annotation profile for documents-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
@@ -45,6 +35,17 @@
         </processorPath>
         <module name="users-service" />
       </profile>
+      <profile name="Annotation profile for notification-service" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
+        </processorPath>
+        <module name="api-gateway" />
+        <module name="notification-service" />
+        <module name="auth-service" />
+      </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
@@ -54,6 +55,7 @@
       <module name="config-server" options="-parameters" />
       <module name="discovery-service" options="-parameters" />
       <module name="documents-service" options="-parameters" />
+      <module name="notification-service" options="-parameters" />
       <module name="users-service" options="-parameters" />
     </option>
   </component>
