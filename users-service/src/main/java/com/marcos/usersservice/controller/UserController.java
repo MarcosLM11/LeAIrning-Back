@@ -39,7 +39,7 @@ public class UserController {
     }
 
     //CREATE user
-    @PostMapping(version = "1.0")
+    @PostMapping(path = "/register" ,version = "1.0")
     public ResponseEntity<UserDTO> createUser(@Valid @RequestBody CreateUserDTO userDTO) {
         log.info(">>> Request to create User with username: {}", userDTO.username());
         userService.createUser(userDTO);
