@@ -56,7 +56,7 @@ spring:
     compatibility-verifier:
       enabled: false
     function:
-      definition: fileSupplier|documentReader|splitter|vectorStoreConsumer
+      definition: fileSupplier|metadataEnricher|documentReader|splitter|vectorStoreConsumer
   integration:
     poller:
       fixed-delay: 5000

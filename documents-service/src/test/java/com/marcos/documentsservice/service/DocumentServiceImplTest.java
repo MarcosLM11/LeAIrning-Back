@@ -6,7 +6,7 @@ import com.marcos.documentsservice.entity.ProcessingStatus;
 import com.marcos.documentsservice.entity.dto.DocumentDTO;
 import com.marcos.documentsservice.exception.DocumentNotFoundException;
 import com.marcos.documentsservice.repository.DocumentRepository;
-import com.marcos.documentsservice.storage.FileStorageService;
+import com.marcos.documentsservice.storage.StorageService;
 import com.marcos.documentsservice.util.DocumentMapper;
 import com.marcos.documentsservice.validator.FileValidator;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,7 +39,7 @@ class DocumentServiceImplTest {
     private DocumentRepository documentRepository;
 
     @Mock
-    private FileStorageService fileStorageService;
+    private StorageService storageService;
 
     @Mock
     private DocumentMapper documentMapper;
@@ -98,23 +98,23 @@ class DocumentServiceImplTest {
     @DisplayName("Should upload single document successfully")
     void shouldUploadSingleDocumentSuccessfully() {
         // Given
-        String storagePath = "/storage/documents/1/2026/01/uuid-test.pdf";
+        var storagePath = "/storage/documents/1/2026/01/uuid-test.pdf";
         doNothing().when(fileValidator).validate(multipartFile);
-        when(fileStorageService.store(multipartFile, userId)).thenReturn(storagePath);
+        when(storageService.store(any(byte[].class), eq("test.pdf"), eq("application/pdf"), eq(userId)))
+                .thenReturn(storagePath);
         when(documentRepository.save(any(Document.class))).thenReturn(document);
         when(documentMapper.toDTO(document)).thenReturn(documentDTO);
 
         // When
-        List<DocumentDTO> result = documentService.uploadDocuments(List.of(multipartFile), userId);
+        var result = documentService.uploadDocuments(List.of(multipartFile), userId);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(documentDTO.originalFilename(), result.getFirst().originalFilename());
         assertEquals(documentDTO.contentType(), result.getFirst().contentType());
-
         verify(fileValidator).validate(multipartFile);
-        verify(fileStorageService).store(multipartFile, userId);
+        verify(storageService).store(any(byte[].class), eq("test.pdf"), eq("application/pdf"), eq(userId));
         verify(documentRepository).save(any(Document.class));
         verify(documentMapper).toDTO(document);
         verify(documentProcessorService).processDocumentAsync(any(Document.class));
@@ -148,7 +148,7 @@ class DocumentServiceImplTest {
         );
 
         doNothing().when(fileValidator).validate(any(MultipartFile.class));
-        when(fileStorageService.store(any(MultipartFile.class), eq(userId)))
+        when(storageService.store(any(byte[].class), anyString(), anyString(), eq(userId)))
                 .thenReturn("/storage/path1")
                 .thenReturn("/storage/path2");
         when(documentRepository.save(any(Document.class)))
@@ -166,9 +166,8 @@ class DocumentServiceImplTest {
         // Then
         assertNotNull(result);
         assertEquals(2, result.size());
-
         verify(fileValidator, times(2)).validate(any(MultipartFile.class));
-        verify(fileStorageService, times(2)).store(any(MultipartFile.class), eq(userId));
+        verify(storageService, times(2)).store(any(byte[].class), anyString(), anyString(), eq(userId));
         verify(documentRepository, times(2)).save(any(Document.class));
         verify(documentProcessorService, times(2)).processDocumentAsync(any(Document.class));
     }
@@ -235,7 +234,7 @@ class DocumentServiceImplTest {
     void shouldDeleteDocumentSuccessfullyWhenUserOwnsDocument() {
         // Given
         when(documentRepository.findById(documentId)).thenReturn(Optional.of(document));
-        doNothing().when(fileStorageService).delete(document.getStoragePath());
+        doNothing().when(storageService).delete(document.getStoragePath());
         doNothing().when(documentRepository).delete(document);
 
         // When
@@ -243,7 +242,7 @@ class DocumentServiceImplTest {
 
         // Then
         verify(documentRepository).findById(documentId);
-        verify(fileStorageService).delete(document.getStoragePath());
+        verify(storageService).delete(document.getStoragePath());
         verify(documentRepository).delete(document);
     }
 
@@ -260,7 +259,7 @@ class DocumentServiceImplTest {
 
         when(documentRepository.findById(1L)).thenReturn(Optional.of(document));
         when(documentRepository.findById(2L)).thenReturn(Optional.of(document2));
-        doNothing().when(fileStorageService).delete(any());
+        doNothing().when(storageService).delete(any());
         doNothing().when(documentRepository).delete(any());
 
         // When
@@ -268,7 +267,7 @@ class DocumentServiceImplTest {
 
         // Then
         verify(documentRepository, times(2)).findById(any());
-        verify(fileStorageService, times(2)).delete(any());
+        verify(storageService, times(2)).delete(any());
         verify(documentRepository, times(2)).delete(any());
     }
 
@@ -276,19 +275,18 @@ class DocumentServiceImplTest {
     @DisplayName("Should download document successfully when user owns document")
     void shouldDownloadDocumentSuccessfullyWhenUserOwnsDocument() {
         // Given
-        byte[] fileContent = "test content".getBytes();
+        var fileContent = "test content".getBytes();
         when(documentRepository.findById(documentId)).thenReturn(Optional.of(document));
-        when(fileStorageService.load(document.getStoragePath())).thenReturn(fileContent);
+        when(storageService.load(document.getStoragePath())).thenReturn(fileContent);
 
         // When
-        byte[] result = documentService.downloadDocument(documentId, userId);
+        var result = documentService.downloadDocument(documentId, userId);
 
         // Then
         assertNotNull(result);
         assertArrayEquals(fileContent, result);
-
         verify(documentRepository).findById(documentId);
-        verify(fileStorageService).load(document.getStoragePath());
+        verify(storageService).load(document.getStoragePath());
     }
 
     @Test

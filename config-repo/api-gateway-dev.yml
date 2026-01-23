@@ -50,6 +50,13 @@ spring:
               filters:
                 - AddRequestHeader=X-Forwarded-By, api-gateway
 
+            - id: chat-service
+              uri: lb://chat-service
+              predicates:
+                - Path=/api/*/chat/**
+              filters:
+                - AddRequestHeader=X-Forwarded-By, api-gateway
+
 eureka:
   client:
     service-url:

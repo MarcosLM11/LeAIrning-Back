@@ -1,5 +1,7 @@
 package com.marcos.chatservice.service;
 
+import com.marcos.chatservice.dto.ChatResponse;
+
 public interface ChatService {
-    String askQuestion(String question, String conversationID);
+    ChatResponse askQuestion(String question, Long userId, String conversationId);
 }

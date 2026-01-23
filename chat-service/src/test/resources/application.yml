@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: chat-service
+  config:
+    import: optional:configserver
+  ai:
+    ollama:
+      chat:
+        options:
+          model: llama3.2
+      embedding:
+        options:
+          model: nomic-embed-text
+    vectorstore:
+      qdrant:
+        collection-name: documents
+        initialize-schema: true
+
+chat:
+  memory:
+    max-messages: 50
+
+eureka:
+  client:
+    enabled: false

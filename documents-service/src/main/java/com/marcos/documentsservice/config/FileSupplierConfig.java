@@ -1,5 +1,6 @@
 package com.marcos.documentsservice.config;
 
+import com.marcos.documentsservice.pipeline.DocumentContext;
 import com.marcos.documentsservice.storage.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +22,7 @@ public class FileSupplierConfig {
     }
 
     @Bean
-    public Supplier<Flux<byte[]>> fileSupplier() {
+    public Supplier<Flux<DocumentContext>> fileSupplier() {
         return () -> Flux.interval(Duration.ofSeconds(5))
                 .flatMap(tick -> {
                     var pendingFiles = storageService.listPendingFiles();
@@ -41,13 +42,14 @@ public class FileSupplierConfig {
             || name.endsWith(".csv") || name.endsWith(".md");
     }
 
-    private Flux<byte[]> processFile(String filePath) {
+    private Flux<DocumentContext> processFile(String filePath) {
         try {
             LOGGER.info("Found file to process: {}", filePath);
+            var documentId = extractDocumentId(filePath);
             var fileBytes = storageService.loadFromProcessing(filePath);
             storageService.markProcessed(filePath, true);
-            LOGGER.info("File processed successfully: {}", filePath);
-            return Flux.just(fileBytes);
+            LOGGER.info("File processed successfully: {} (documentId={})", filePath, documentId);
+            return Flux.just(DocumentContext.of(fileBytes, documentId));
         } catch (Exception e) {
             LOGGER.error("Error processing file: {}", filePath, e);
             try {
@@ -57,5 +59,19 @@ public class FileSupplierConfig {
             }
             return Flux.empty();
         }
+    }
+
+    /**
+     * Extracts documentId from the processing path.
+     * Expected format: pending/{documentId}_{filename}
+     */
+    private Long extractDocumentId(String filePath) {
+        var filename = filePath.substring(filePath.lastIndexOf('/') + 1);
+        var underscoreIndex = filename.indexOf('_');
+        if (underscoreIndex > 0) {
+            var idPart = filename.substring(0, underscoreIndex);
+            return Long.parseLong(idPart);
+        }
+        throw new IllegalArgumentException("Cannot extract documentId from path: " + filePath);
     }
 }
