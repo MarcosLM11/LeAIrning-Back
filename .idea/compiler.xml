@@ -19,6 +19,7 @@
       <module name="discovery-service" target="25" />
       <module name="documents-service" target="25" />
       <module name="notification-service" target="25" />
+      <module name="users-service" target="25" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
