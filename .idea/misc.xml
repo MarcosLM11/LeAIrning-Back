@@ -23,7 +23,6 @@
         <option value="$PROJECT_DIR$/discovery-service/pom.xml" />
         <option value="$PROJECT_DIR$/documents-service/pom.xml" />
         <option value="$PROJECT_DIR$/notification-service/pom.xml" />
-        <option value="$PROJECT_DIR$/users-service/pom.xml" />
       </set>
     </option>
   </component>
