@@ -16,7 +16,6 @@
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
         </processorPath>
-        <module name="users-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -27,6 +26,7 @@
       <module name="discovery-service" target="25" />
       <module name="documents-service" target="25" />
       <module name="notification-service" target="25" />
+      <module name="users-service" target="25" />
       <module name="users-service.main" target="25" />
       <module name="users-service.test" target="25" />
     </bytecodeTargetLevel>
