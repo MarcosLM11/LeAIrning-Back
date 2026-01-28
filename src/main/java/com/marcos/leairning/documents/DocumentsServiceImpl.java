@@ -3,17 +3,24 @@ package com.marcos.leairning.documents;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.val;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.UnsupportedMediaTypeException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 @FieldDefaults(makeFinal = true, level = lombok.AccessLevel.PRIVATE)
 public class DocumentsServiceImpl implements DocumentsService {
 
@@ -30,18 +37,24 @@ public class DocumentsServiceImpl implements DocumentsService {
 
     DocumentsRepository repository;
     DocumentsMapper mapper;
+    CacheManager cacheManager;
 
     @Override
     public Page<DocumentResponseDTO> getDocuments(Pageable pageable) {
-        return repository.findAll(pageable).map(mapper::toDTO);
+        return repository.findAll(pageable)
+                .map(mapper::toDTO);
     }
 
     @Override
-    public void upload(List<MultipartFile> files) {
-        files.forEach(this::uploadDocument);
+    @Transactional
+    public List<DocumentResponseDTO> upload(List<MultipartFile> files) {
+        return files.stream()
+                .map(this::uploadDocument)
+                .toList();
     }
 
     @Override
+    @Cacheable(value = "documents", key = "#id")
     public DocumentResponseDTO getDocument(UUID id) {
         val document = repository.findById(id).orElseThrow(
                 () -> new IllegalArgumentException("Unable to find document with id: " + id)
@@ -51,6 +64,8 @@ public class DocumentsServiceImpl implements DocumentsService {
     }
 
     @Override
+    @Transactional
+    @CacheEvict(value = "documents", key = "#id")
     public void deleteDocument(UUID id) {
         if (!repository.existsById(id)) {
 
@@ -62,12 +77,13 @@ public class DocumentsServiceImpl implements DocumentsService {
     }
 
 
-    private void uploadDocument(MultipartFile file) {
+    private DocumentResponseDTO uploadDocument(MultipartFile file) {
         validateDocument(file);
         val document = mapper.toEntity(file);
         document.setUserId(UUID.randomUUID());
         document.setFileName(sanitizeFilename(file.getOriginalFilename()));
-        repository.save(document);
+        val saved = repository.save(document);
+        return mapper.toDTO(saved);
     }
 
     public void validateDocument(MultipartFile file) {

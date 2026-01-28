@@ -9,7 +9,7 @@ import java.util.UUID;
 public interface DocumentsService {
 
     Page<DocumentResponseDTO> getDocuments(Pageable pageable);
-    void upload(List<MultipartFile> files);
+    List<DocumentResponseDTO> upload(List<MultipartFile> files);
     DocumentResponseDTO getDocument(UUID id);
     void deleteDocument(UUID id);
 }

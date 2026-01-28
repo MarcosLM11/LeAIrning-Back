@@ -1,3 +1,13 @@
+leairning:
+  cache:
+    caffeine:
+      documents-maximum-size: 1000
+      documents-expire-after-access: 60s
+      users-maximum-size: 1000
+      users-expire-after-access: 60s
+      rate-limit-maximum-size: 100000
+      rate-limit-expire-after-access: 1h
+
 spring:
   application:
     name: LeAIrning-Back
@@ -9,7 +19,7 @@ spring:
     driver-class-name: org.postgresql.Driver
 
   jpa:
-    show-sql: false
+    show-sql: true
     hibernate:
       ddl-auto: none
 
@@ -18,6 +28,9 @@ spring:
       pageable:
         default-page-size: 20
         max-page-size: 100
+
+  cache:
+    type: caffeine
 
   flyway:
     enabled: true
@@ -30,3 +43,67 @@ spring:
       enabled: true
       max-file-size: 50MB
       max-request-size: 50MB
+
+bucket4j:
+  enabled: true
+  cache-to-use: jcache
+  filters:
+    - cache-name: rate-limit-buckets
+      url: ^/documents$
+      strategy: first
+      http-status-code: TOO_MANY_REQUESTS
+      http-response-body: '{"error": "Rate limit exceeded", "message": "Too many requests for listing documents"}'
+      http-content-type: application/json
+      rate-limits:
+        - cache-key: getRemoteAddr()
+          execute-condition: getMethod() == 'GET'
+          bandwidths:
+            - capacity: 100
+              time: 1
+              unit: minutes
+              refill-speed: interval
+
+    - cache-name: rate-limit-buckets
+      url: ^/documents$
+      strategy: first
+      http-status-code: TOO_MANY_REQUESTS
+      http-response-body: '{"error": "Rate limit exceeded", "message": "Too many upload requests"}'
+      http-content-type: application/json
+      rate-limits:
+        - cache-key: getRemoteAddr()
+          execute-condition: getMethod() == 'POST'
+          bandwidths:
+            - capacity: 10
+              time: 1
+              unit: minutes
+              refill-speed: interval
+
+    - cache-name: rate-limit-buckets
+      url: ^/documents/[0-9a-fA-F-]+$
+      strategy: first
+      http-status-code: TOO_MANY_REQUESTS
+      http-response-body: '{"error": "Rate limit exceeded", "message": "Too many requests for document details"}'
+      http-content-type: application/json
+      rate-limits:
+        - cache-key: getRemoteAddr()
+          execute-condition: getMethod() == 'GET'
+          bandwidths:
+            - capacity: 200
+              time: 1
+              unit: minutes
+              refill-speed: interval
+
+    - cache-name: rate-limit-buckets
+      url: ^/documents/[0-9a-fA-F-]+$
+      strategy: first
+      http-status-code: TOO_MANY_REQUESTS
+      http-response-body: '{"error": "Rate limit exceeded", "message": "Too many delete requests"}'
+      http-content-type: application/json
+      rate-limits:
+        - cache-key: getRemoteAddr()
+          execute-condition: getMethod() == 'DELETE'
+          bandwidths:
+            - capacity: 5
+              time: 1
+              unit: minutes
+              refill-speed: interval

@@ -3,29 +3,36 @@ package com.marcos.leairning.users;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.val;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 @FieldDefaults(makeFinal = true, level = lombok.AccessLevel.PRIVATE)
 public class UsersServiceImpl implements UsersService {
 
     UsersRepository repository;
+    UsersMapper mapper;
 
     @Override
+    @Cacheable(value = "users", key = "#id")
     public UserResponseDTO get(UUID id) {
 
         val user = repository.findById(id).orElseThrow(
                 () -> new IllegalArgumentException("Unable to find user with id: " + id )
         );
 
-        return UserResponseDTO.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .build();
+        return mapper.toResponse(user);
     }
 
+    @Override
+    @Transactional
+    @Cacheable(value = "users", key = "#result.id")
     public UserResponseDTO save(UserCreateDTO dto) {
         val user = new User();
         user.setEmail(dto.email());
@@ -33,13 +40,14 @@ public class UsersServiceImpl implements UsersService {
 
         val savedUser = repository.save(user);
 
-        return UserResponseDTO.builder()
-                .id(savedUser.getId())
-                .email(savedUser.getEmail())
-                .build();
+        return mapper.toResponse(savedUser);
     }
 
+    @Override
+    @Transactional
+    @CacheEvict(value = "users", key = "#id")
     public UserResponseDTO update(UUID userId, UserUpdateDTO dto) {
+
         val user = repository.findById(userId).orElseThrow(
                         () -> new IllegalArgumentException("Unable to find user with id: " + userId )
         );
@@ -49,12 +57,12 @@ public class UsersServiceImpl implements UsersService {
 
         repository.save(user);
 
-        return UserResponseDTO.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .build();
+        return mapper.toResponse(user);
     }
 
+    @Override
+    @Transactional
+    @CacheEvict(value = "users", key = "#id")
     public void delete(UUID id) {
         if (!repository.existsById(id)) {
 
