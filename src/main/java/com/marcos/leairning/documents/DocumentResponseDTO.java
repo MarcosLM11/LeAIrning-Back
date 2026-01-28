@@ -1,5 +1,6 @@
 package com.marcos.leairning.documents;
 
+import lombok.Builder;
 import java.util.UUID;
 
 public record DocumentResponseDTO(
