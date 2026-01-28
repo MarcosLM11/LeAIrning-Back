@@ -3,6 +3,8 @@ package com.marcos.leairning.documents;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.val;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.UnsupportedMediaTypeException;
@@ -30,6 +32,11 @@ public class DocumentsServiceImpl implements DocumentsService {
     DocumentsMapper mapper;
 
     @Override
+    public Page<DocumentResponseDTO> getDocuments(Pageable pageable) {
+        return repository.findAll(pageable).map(mapper::toDTO);
+    }
+
+    @Override
     public void upload(List<MultipartFile> files) {
         files.forEach(this::uploadDocument);
     }
@@ -45,6 +52,12 @@ public class DocumentsServiceImpl implements DocumentsService {
 
     @Override
     public void deleteDocument(UUID id) {
+        if (!repository.existsById(id)) {
+
+            throw new IllegalArgumentException("Unable to find document with id: " + id);
+
+        }
+
         repository.deleteById(id);
     }
 
@@ -52,6 +65,8 @@ public class DocumentsServiceImpl implements DocumentsService {
     private void uploadDocument(MultipartFile file) {
         validateDocument(file);
         val document = mapper.toEntity(file);
+        document.setUserId(UUID.randomUUID());
+        document.setFileName(sanitizeFilename(file.getOriginalFilename()));
         repository.save(document);
     }
 

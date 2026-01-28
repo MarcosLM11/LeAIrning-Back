@@ -19,8 +19,8 @@ public class Document extends AbstractJpaVersionedAuditableEntity {
     @GeneratedValue(generator = "UUID")
     private UUID id;
 
-    @Column(name = "user")
-    private UUID user;
+    @Column(name = "user_id")
+    private UUID userId;
 
     @Column(name = "file_name")
     private String fileName;

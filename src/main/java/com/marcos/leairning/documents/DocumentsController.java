@@ -2,6 +2,10 @@ package com.marcos.leairning.documents;
 
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +24,13 @@ import java.util.UUID;
 public class DocumentsController {
 
     DocumentsService service;
+
+    @GetMapping
+    public Page<DocumentResponseDTO> getDocuments(
+            @PageableDefault(sort = "createdTimestamp", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        return service.getDocuments(pageable);
+    }
 
     @PostMapping
     public void upload(@RequestParam("files") List<MultipartFile> files) {

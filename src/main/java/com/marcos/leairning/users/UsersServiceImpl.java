@@ -56,6 +56,11 @@ public class UsersServiceImpl implements UsersService {
     }
 
     public void delete(UUID id) {
+        if (!repository.existsById(id)) {
+
+            throw new IllegalArgumentException("Unable to find user with id: " + id);
+        }
+
         repository.deleteById(id);
     }
 
