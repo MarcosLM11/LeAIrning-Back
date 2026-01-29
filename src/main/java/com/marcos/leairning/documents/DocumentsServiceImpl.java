@@ -83,13 +83,21 @@ public class DocumentsServiceImpl implements DocumentsService {
     }
 
 
-    private DocumentResponseDTO uploadDocument(MultipartFile file) throws IOException {
+    private DocumentResponseDTO uploadDocument(MultipartFile file) {
         validateDocument(file);
+
         val document = mapper.toEntity(file);
         document.setUserId(UUID.randomUUID());
         document.setFileName(sanitizeFilename(file.getOriginalFilename()));
-        val objectPath = minioService.store(file.getBytes(), document);
-        document.setStoragePath(objectPath);
+
+        try {
+            val objectPath = minioService.store(file.getBytes(), document);
+            document.setStoragePath(objectPath);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read file bytes", e);
+        }
+
         val saved = repository.save(document);
         return mapper.toDTO(saved);
     }
