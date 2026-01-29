@@ -3,26 +3,29 @@ package com.marcos.leairning.minio;
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConditionalOnProperty(name = "storage.type", havingValue = "minio")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class MinioConfig {
 
-
+    MinioProperties properties;
 
     @Bean
     public MinioClient minioClient() {
         var client = MinioClient.builder()
-                .endpoint(endpoint)
-                .credentials(accessKey, secretKey)
+                .endpoint(properties.getEndpoint())
+                .credentials(properties.getAccessKey(), properties.getSecretKey())
                 .build();
-        if (autoCreateBuckets) {
-            createBucketIfNotExists(client, documentsBucket);
-            createBucketIfNotExists(client, processingBucket);
+        if (properties.isAutoCreateBuckets()) {
+            createBucketIfNotExists(client, properties.getDocumentsBucket());
+            createBucketIfNotExists(client, properties.getProcessingBucket());
         }
         return client;
     }

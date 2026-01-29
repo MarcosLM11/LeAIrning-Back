@@ -2,10 +2,11 @@ package com.marcos.leairning.documents;
 
 import com.giffing.bucket4j.spring.boot.starter.context.IgnoreRateLimiting;
 import com.giffing.bucket4j.spring.boot.starter.context.RateLimiting;
+import com.marcos.leairning.minio.MinioService;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
 import lombok.val;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.UnsupportedMediaTypeException;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -39,7 +42,7 @@ public class DocumentsServiceImpl implements DocumentsService {
 
     DocumentsRepository repository;
     DocumentsMapper mapper;
-    CacheManager cacheManager;
+    MinioService minioService;
 
     @Override
     public Page<DocumentResponseDTO> getDocuments(Pageable pageable) {
@@ -48,6 +51,7 @@ public class DocumentsServiceImpl implements DocumentsService {
     }
 
     @Override
+    @SneakyThrows
     @Transactional
     public List<DocumentResponseDTO> upload(List<MultipartFile> files) {
         return files.stream()
@@ -70,23 +74,36 @@ public class DocumentsServiceImpl implements DocumentsService {
     @Transactional
     @CacheEvict(value = "documents", key = "#id")
     public void deleteDocument(UUID id) {
-        if (!repository.existsById(id)) {
+        val document = repository.findById(id).orElseThrow(
+                () -> new IllegalArgumentException("Unable to find document with id: " + id)
+        );
 
-            throw new IllegalArgumentException("Unable to find document with id: " + id);
-
-        }
-
+        minioService.delete(document.getStoragePath());
         repository.deleteById(id);
     }
 
 
-    private DocumentResponseDTO uploadDocument(MultipartFile file) {
+    private DocumentResponseDTO uploadDocument(MultipartFile file) throws IOException {
         validateDocument(file);
         val document = mapper.toEntity(file);
         document.setUserId(UUID.randomUUID());
         document.setFileName(sanitizeFilename(file.getOriginalFilename()));
+        val objectPath = minioService.store(file.getBytes(), document);
+        document.setStoragePath(objectPath);
         val saved = repository.save(document);
         return mapper.toDTO(saved);
+    }
+
+    public byte[] downloadDocument(UUID documentId, UUID userId) {
+        val document = repository.findById(documentId).orElseThrow(
+                () -> new IllegalArgumentException("Unable to find document with id: " + documentId)
+        );
+
+        if (!document.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("User does not have access to this document");
+        }
+
+        return minioService.load(document.getStoragePath());
     }
 
     public void validateDocument(MultipartFile file) {
