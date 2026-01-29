@@ -1,11 +1,12 @@
 package com.marcos.leairning.documents;
 
+import com.giffing.bucket4j.spring.boot.starter.context.IgnoreRateLimiting;
+import com.giffing.bucket4j.spring.boot.starter.context.RateLimiting;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.val;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,12 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.UnsupportedMediaTypeException;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import static com.marcos.leairning.cache.CaffeineCacheProperties.DEFAULT_POLICY;
 
 @Service
 @RequiredArgsConstructor
+@RateLimiting(name = DEFAULT_POLICY)
 @Transactional(readOnly = true)
 @FieldDefaults(makeFinal = true, level = lombok.AccessLevel.PRIVATE)
 public class DocumentsServiceImpl implements DocumentsService {
@@ -54,6 +56,7 @@ public class DocumentsServiceImpl implements DocumentsService {
     }
 
     @Override
+    @IgnoreRateLimiting
     @Cacheable(value = "documents", key = "#id")
     public DocumentResponseDTO getDocument(UUID id) {
         val document = repository.findById(id).orElseThrow(

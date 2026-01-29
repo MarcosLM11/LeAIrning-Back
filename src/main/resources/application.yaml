@@ -7,6 +7,14 @@ leairning:
       users-expire-after-access: 60s
       rate-limit-maximum-size: 100000
       rate-limit-expire-after-access: 1h
+  storage:
+    minio:
+      endpoint: http://localhost:9000
+      access-key: minioadmin
+      secret-key: minioadmin
+      documents-bucket: leairning-documents
+      processing-bucket: leairning-processing
+      auto-create-buckets: true
 
 spring:
   application:
@@ -47,63 +55,30 @@ spring:
 bucket4j:
   enabled: true
   cache-to-use: jcache
-  filters:
-    - cache-name: rate-limit-buckets
-      url: ^/documents$
-      strategy: first
-      http-status-code: TOO_MANY_REQUESTS
-      http-response-body: '{"error": "Rate limit exceeded", "message": "Too many requests for listing documents"}'
-      http-content-type: application/json
-      rate-limits:
-        - cache-key: getRemoteAddr()
-          execute-condition: getMethod() == 'GET'
-          bandwidths:
-            - capacity: 100
-              time: 1
-              unit: minutes
-              refill-speed: interval
+  methods:
+    - name: default
+      cache-name: rate-limit-buckets
+      rate-limit:
+        cache-key: '@rateLimitKeyProvider.getIp()'
+        bandwidths:
+          - capacity: 60
+            time: 1
+            unit: minutes
 
-    - cache-name: rate-limit-buckets
-      url: ^/documents$
-      strategy: first
-      http-status-code: TOO_MANY_REQUESTS
-      http-response-body: '{"error": "Rate limit exceeded", "message": "Too many upload requests"}'
-      http-content-type: application/json
-      rate-limits:
-        - cache-key: getRemoteAddr()
-          execute-condition: getMethod() == 'POST'
-          bandwidths:
-            - capacity: 10
-              time: 1
-              unit: minutes
-              refill-speed: interval
+    - name: strict
+      cache-name: rate-limit-buckets
+      rate-limit:
+        cache-key: '@rateLimitKeyProvider.getIp()'
+        bandwidths:
+          - capacity: 10
+            time: 1
+            unit: minutes
 
-    - cache-name: rate-limit-buckets
-      url: ^/documents/[0-9a-fA-F-]+$
-      strategy: first
-      http-status-code: TOO_MANY_REQUESTS
-      http-response-body: '{"error": "Rate limit exceeded", "message": "Too many requests for document details"}'
-      http-content-type: application/json
-      rate-limits:
-        - cache-key: getRemoteAddr()
-          execute-condition: getMethod() == 'GET'
-          bandwidths:
-            - capacity: 200
-              time: 1
-              unit: minutes
-              refill-speed: interval
-
-    - cache-name: rate-limit-buckets
-      url: ^/documents/[0-9a-fA-F-]+$
-      strategy: first
-      http-status-code: TOO_MANY_REQUESTS
-      http-response-body: '{"error": "Rate limit exceeded", "message": "Too many delete requests"}'
-      http-content-type: application/json
-      rate-limits:
-        - cache-key: getRemoteAddr()
-          execute-condition: getMethod() == 'DELETE'
-          bandwidths:
-            - capacity: 5
-              time: 1
-              unit: minutes
-              refill-speed: interval
+    - name: lenient
+      cache-name: rate-limit-buckets
+      rate-limit:
+        cache-key: '@rateLimitKeyProvider.getIp()'
+        bandwidths:
+          - capacity: 100
+            time: 1
+            unit: minutes

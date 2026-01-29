@@ -135,6 +135,13 @@
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>jcache</artifactId>
         </dependency>
+        <!-- MINIO -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.6.0</version>
+            <scope>compile</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -189,6 +196,13 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-qdrant</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- MINIO TESTCONTAINERS -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>minio</artifactId>
+            <version>1.21.4</version>
             <scope>test</scope>
         </dependency>
 
