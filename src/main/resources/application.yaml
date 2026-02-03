@@ -26,6 +26,9 @@ leairning:
     frontend-url: ${FRONTEND_URL:http://localhost:4200}
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
+
   application:
     name: LeAIrning-Back
 
@@ -48,8 +51,8 @@ spring:
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:marcoslopezmarinn@gmail.com}
-    password: ${MAIL_PASSWORD:pwja hvir zgvr wfgp}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     from: ${MAIL_FROM:noreply@leairning.com}
     properties:
       mail:

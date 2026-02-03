@@ -1,6 +1,7 @@
 package com.marcos.leairning.users;
 
 import com.marcos.leairning.security.auth.RegisterRequestDTO;
+import com.marcos.leairning.security.oauth2.Oauth2UserCreateDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -17,14 +18,14 @@ public interface UsersMapper {
 
     User toUser(RegisterRequestDTO dto);
 
+    User toUser(Oauth2UserCreateDTO dto);
+
     UserResponseDTO toResponse(User user);
 
     @Mapping(target = "email", expression = "java((String) oAuth2User.getAttribute(\"email\"))")
     @Mapping(target = "name", expression = "java((String) oAuth2User.getAttribute(\"name\"))")
     @Mapping(target = "pictureUrl", expression = "java((String) oAuth2User.getAttribute(\"picture\"))")
-    @Mapping(target = "role", constant = "USER")
-    @Mapping(target = "password", ignore = true)
-    RegisterRequestDTO toCreateDTO(OAuth2User oAuth2User);
+    Oauth2UserCreateDTO toOauth2CreateDTO(OAuth2User oAuth2User);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)

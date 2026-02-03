@@ -70,7 +70,6 @@ public class AuthServiceImpl implements AuthService {
         verificationTokenCache.invalidate(token);
 
         val user = usersService.updateVerifiedStatus(email);
-        emailService.sendWelcomeEmail(email, "Welcome to LeAIrning!");
         val authCode = generateAuthCode(user);
 
         // Send welcome email - don't let it break the verification flow

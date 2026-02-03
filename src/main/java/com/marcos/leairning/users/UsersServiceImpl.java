@@ -1,6 +1,7 @@
 package com.marcos.leairning.users;
 
 import com.marcos.leairning.security.auth.RegisterRequestDTO;
+import com.marcos.leairning.security.oauth2.Oauth2UserCreateDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.val;
@@ -36,11 +37,8 @@ public class UsersServiceImpl implements UsersService {
 
     @Override
     public Optional<UserResponseDTO> getByEmail(String email) {
-        val user = repository.findByEmail(email).orElseThrow(
-                () -> new IllegalArgumentException("Unable to find user with email: " + email )
-        );
-
-        return Optional.of(mapper.toResponse(user));
+        return repository.findByEmail(email)
+                .map(mapper::toResponse);
     }
 
     @Override
@@ -63,6 +61,23 @@ public class UsersServiceImpl implements UsersService {
         user.setPassword(passwordEncoder.encode(dto.password()));
         user.setRole(DEFAULT_ROLE);
         user.setVerified(false);
+
+        val savedUser = repository.save(user);
+        return mapper.toResponse(savedUser);
+    }
+
+    @Override
+    @Transactional
+    @CachePut(value = "users", key = "#result.id")
+    public UserResponseDTO saveOauth2User(Oauth2UserCreateDTO dto) {
+        if (repository.findByEmail(dto.email()).isPresent()) {
+            throw new IllegalArgumentException("Email already registered");
+        }
+
+        val user = mapper.toUser(dto);
+
+        user.setRole(DEFAULT_ROLE);
+        user.setVerified(true);
 
         val savedUser = repository.save(user);
         return mapper.toResponse(savedUser);

@@ -52,9 +52,8 @@ public class Oauth2SuccessHandler extends AuthCodeAuthenticationSuccessHandler {
         val email = (String) principal.getAttribute(EMAIL);
         val user = usersService.getByEmail(email).orElseGet(
                 () -> {
-                    val dto = usersMapper.toCreateDTO(principal);
-                    usersService.save(dto);
-                    return usersService.getByEmail(email).orElseThrow();
+                    val dto = usersMapper.toOauth2CreateDTO(principal);
+                    return usersService.saveOauth2User(dto);
                 }
         );
         val tokenPair = generateTokenPair(user);
