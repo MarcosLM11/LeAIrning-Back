@@ -1,11 +1,14 @@
 -- V1: Initial schema creation for users table with auditing fields
 CREATE TABLE users (
     id UUID PRIMARY KEY,
-    password VARCHAR(255),
     email VARCHAR(255),
-    version BIGINT,
+    name VARCHAR(255),
+    picture_url VARCHAR(2048),
+    role VARCHAR(36),
+    password VARCHAR(255),
     created_timestamp TIMESTAMP WITHOUT TIME ZONE,
-    last_updated_timestamp TIMESTAMP WITHOUT TIME ZONE
+    last_updated_timestamp TIMESTAMP WITHOUT TIME ZONE,
+    version BIGINT
 );
 
 -- Indexes for performance

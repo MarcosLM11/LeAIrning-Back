@@ -22,6 +22,18 @@ public class User extends AbstractJpaVersionedAuditableEntity {
     @Column(name = "email", unique = true)
     private String email;
 
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "picture_url")
+    private String pictureUrl;
+
+    @Column(name = "role")
+    private String role;
+
     @Column(name = "password")
     private String password;
+
+    @Column(name = "verified", nullable = false)
+    private boolean verified;
 }

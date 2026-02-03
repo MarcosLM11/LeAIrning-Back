@@ -15,10 +15,55 @@ leairning:
       documents-bucket: leairning-documents
       processing-bucket: leairning-processing
       auto-create-buckets: true
+  jwt:
+    access-token-ttl: 30m
+    refresh-token-ttl: 7d
+  secret:
+    jwt:
+      value: ${JWT_SECRET:ThisIsADevelopmentSecretKeyThatShouldBeAtLeast64BytesLongForHS512Algorithm!}
+      algorithm: HS512
+  auth:
+    frontend-url: ${FRONTEND_URL:http://localhost:4200}
 
 spring:
   application:
     name: LeAIrning-Back
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:your-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:your-google-client-secret}
+            scope: openid, profile, email
+            redirect-uri: "http://localhost:8080/login/oauth2/code/google"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:marcoslopezmarinn@gmail.com}
+    password: ${MAIL_PASSWORD:pwja hvir zgvr wfgp}
+    from: ${MAIL_FROM:noreply@leairning.com}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false
 
   datasource:
     url: jdbc:postgresql://localhost:5432/leairningdb

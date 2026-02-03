@@ -1,15 +1,23 @@
 package com.marcos.leairning.users;
 
+import com.marcos.leairning.security.auth.RegisterRequestDTO;
+
+import java.util.Optional;
 import java.util.UUID;
 
 public interface UsersService {
 
     UserResponseDTO get(UUID id);
 
-    UserResponseDTO save(UserCreateDTO user);
+    Optional<UserResponseDTO> getByEmail(String email);
+
+    User getEntityByEmail(String email);
+
+    UserResponseDTO save(RegisterRequestDTO user);
 
     UserResponseDTO update(UUID userId, UserUpdateDTO user);
 
-    void delete(UUID id);
+    UserResponseDTO updateVerifiedStatus(String email);
 
+    void delete(UUID id);
 }

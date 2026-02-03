@@ -13,11 +13,6 @@ public class UsersController {
 
     UsersService service;
 
-    @PostMapping
-    public UserResponseDTO createUser(@RequestBody UserCreateDTO dto) {
-        return service.save(dto);
-    }
-
     @GetMapping("/{userId}")
     public UserResponseDTO getUser(@PathVariable UUID userId) {
         return service.get(userId);
