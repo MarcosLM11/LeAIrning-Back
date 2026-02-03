@@ -13,6 +13,6 @@ public class AuthProperties {
 
     public static final String PREFIX = "leairning.auth";
 
-    private String frontendUrl = "http://localhost:3000";
+    private String frontendUrl = "http://localhost:4200";
     private Duration verificationTokenTtl = Duration.ofHours(24);
 }

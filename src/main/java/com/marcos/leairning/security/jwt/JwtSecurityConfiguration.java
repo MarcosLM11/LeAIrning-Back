@@ -30,7 +30,8 @@ public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
 
     private static final String[] SECURED_PATTERNS = {
             "/token/refresh",
-            "/api/**"
+            "/api/**",
+            "/users/**"
     };
 
     JwtSecretProperties properties;

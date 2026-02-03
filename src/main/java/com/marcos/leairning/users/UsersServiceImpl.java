@@ -86,6 +86,7 @@ public class UsersServiceImpl implements UsersService {
     }
 
     @Override
+    @Transactional
     public UserResponseDTO updateVerifiedStatus(String email) {
 
         val user = repository.findByEmail(email).orElseThrow(

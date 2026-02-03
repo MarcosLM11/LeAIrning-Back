@@ -1,5 +1,7 @@
 package com.marcos.leairning.security;
 
+import com.marcos.leairning.security.auth.AuthProperties;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,12 +12,17 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfigurationSource;
+import java.util.List;
 import static org.springframework.http.HttpMethod.GET;
 
+@RequiredArgsConstructor
 @EnableWebSecurity
 @EnableMethodSecurity
 @Configuration(proxyBeanMethods = false)
 public class DefaultWebSecurityConfiguration extends AbstractSecurityConfiguration {
+
+    private final AuthProperties authProperties;
 
     private static final String ACTUATOR_PATTERN = "/actuator/**";
     private static final String ERROR_PATTERN = "/error";
@@ -77,5 +84,10 @@ public class DefaultWebSecurityConfiguration extends AbstractSecurityConfigurati
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        return corsConfigurationSource(List.of(authProperties.getFrontendUrl()));
     }
 }

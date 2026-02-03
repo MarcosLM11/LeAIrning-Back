@@ -71,7 +71,16 @@ public class AuthServiceImpl implements AuthService {
 
         val user = usersService.updateVerifiedStatus(email);
         emailService.sendWelcomeEmail(email, "Welcome to LeAIrning!");
-        return generateAuthCode(user);
+        val authCode = generateAuthCode(user);
+
+        // Send welcome email - don't let it break the verification flow
+        try {
+            emailService.sendWelcomeEmail(email, "Welcome to LeAIrning!");
+        } catch (Exception e) {
+            log.atWarning().withCause(e).log("Failed to send welcome email to %s", email);
+        }
+
+        return authCode;
     }
 
     private String generateAuthCode(UserResponseDTO user) {
