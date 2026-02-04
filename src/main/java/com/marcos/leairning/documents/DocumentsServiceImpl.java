@@ -2,10 +2,13 @@ package com.marcos.leairning.documents;
 
 import com.giffing.bucket4j.spring.boot.starter.context.IgnoreRateLimiting;
 import com.giffing.bucket4j.spring.boot.starter.context.RateLimiting;
-import com.marcos.leairning.minio.MinioService;
+import com.marcos.leairning.exception.DocumentAccessDeniedException;
+import com.marcos.leairning.exception.DocumentNotFoundException;
+import com.marcos.leairning.exception.DocumentProcessingException;
+import com.marcos.leairning.minio.MinioDocumentStorageService;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.flogger.Flogger;
 import lombok.val;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -15,13 +18,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.UnsupportedMediaTypeException;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import static com.marcos.leairning.cache.CaffeineCacheProperties.DEFAULT_POLICY;
 
+@Flogger
 @Service
 @RequiredArgsConstructor
 @RateLimiting(name = DEFAULT_POLICY)
@@ -42,76 +45,78 @@ public class DocumentsServiceImpl implements DocumentsService {
 
     DocumentsRepository repository;
     DocumentsMapper mapper;
-    MinioService minioService;
+    MinioDocumentStorageService storageService;
 
     @Override
     public Page<DocumentResponseDTO> getDocuments(Pageable pageable) {
+        log.atFine().log("Fetching documents page: %d, size: %d", pageable.getPageNumber(), pageable.getPageSize());
         return repository.findAll(pageable)
                 .map(mapper::toDTO);
     }
 
     @Override
-    @SneakyThrows
     @Transactional
     public List<DocumentResponseDTO> upload(List<MultipartFile> files) {
-        return files.stream()
+        log.atInfo().log("Uploading %d documents", files.size());
+        val result = files.stream()
                 .map(this::uploadDocument)
                 .toList();
+
+        log.atInfo().log("Successfully uploaded %d documents", result.size());
+        return result;
     }
 
     @Override
     @IgnoreRateLimiting
     @Cacheable(value = "documents", key = "#id")
     public DocumentResponseDTO getDocument(UUID id) {
-        val document = repository.findById(id).orElseThrow(
-                () -> new IllegalArgumentException("Unable to find document with id: " + id)
-        );
-
-        return mapper.toDTO(document);
+        log.atFine().log("Fetching document with id: %s", id);
+        return mapper.toDTO(findDocumentOrThrow(id));
     }
 
     @Override
     @Transactional
     @CacheEvict(value = "documents", key = "#id")
     public void deleteDocument(UUID id) {
-        val document = repository.findById(id).orElseThrow(
-                () -> new IllegalArgumentException("Unable to find document with id: " + id)
-        );
-
-        minioService.delete(document.getStoragePath());
+        log.atInfo().log("Deleting document with id: %s", id);
+        val document = findDocumentOrThrow(id);
+        storageService.delete(document.getStoragePath());
         repository.deleteById(id);
+        log.atInfo().log("Document deleted successfully: %s", id);
     }
-
 
     private DocumentResponseDTO uploadDocument(MultipartFile file) {
         validateDocument(file);
-
         val document = mapper.toEntity(file);
         document.setUserId(UUID.randomUUID());
         document.setFileName(sanitizeFilename(file.getOriginalFilename()));
-
+        
         try {
-            val objectPath = minioService.store(file.getBytes(), document);
+            val objectPath = storageService.store(file.getBytes(), document);
             document.setStoragePath(objectPath);
-
+        
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read file bytes", e);
+            throw new DocumentProcessingException("Failed to read file bytes", e);
         }
-
+        
         val saved = repository.save(document);
+        log.atFine().log("Document uploaded: %s", saved.getId());
         return mapper.toDTO(saved);
     }
 
     public byte[] downloadDocument(UUID documentId, UUID userId) {
-        val document = repository.findById(documentId).orElseThrow(
-                () -> new IllegalArgumentException("Unable to find document with id: " + documentId)
-        );
-
+        log.atFine().log("Downloading document %s for user %s", documentId, userId);
+        val document = findDocumentOrThrow(documentId);
+        
         if (!document.getUserId().equals(userId)) {
-            throw new IllegalArgumentException("User does not have access to this document");
+            throw new DocumentAccessDeniedException(documentId, userId);
+        
         }
+        return storageService.load(document.getStoragePath());
+    }
 
-        return minioService.load(document.getStoragePath());
+    private Document findDocumentOrThrow(UUID id) {
+        return repository.findById(id).orElseThrow(() -> new DocumentNotFoundException(id));
     }
 
     public void validateDocument(MultipartFile file) {

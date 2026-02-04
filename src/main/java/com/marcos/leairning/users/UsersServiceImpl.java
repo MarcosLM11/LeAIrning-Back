@@ -1,9 +1,12 @@
 package com.marcos.leairning.users;
 
+import com.marcos.leairning.exception.EmailAlreadyRegisteredException;
+import com.marcos.leairning.exception.UserNotFoundException;
 import com.marcos.leairning.security.auth.RegisterRequestDTO;
 import com.marcos.leairning.security.oauth2.Oauth2UserCreateDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.flogger.Flogger;
 import lombok.val;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -14,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 import java.util.UUID;
 
+@Flogger
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -29,40 +33,37 @@ public class UsersServiceImpl implements UsersService {
     @Override
     @Cacheable(value = "users", key = "#id")
     public UserResponseDTO get(UUID id) {
-        val user = repository.findById(id).orElseThrow(
-                () -> new IllegalArgumentException("Unable to find user with id: " + id)
-        );
-        return mapper.toResponse(user);
+        log.atFine().log("Fetching user with id: %s", id);
+        return mapper.toResponse(findUserOrThrow(id));
     }
 
     @Override
     public Optional<UserResponseDTO> getByEmail(String email) {
-        return repository.findByEmail(email)
-                .map(mapper::toResponse);
+        log.atFine().log("Fetching user by email: %s", email);
+        return repository.findByEmail(email).map(mapper::toResponse);
     }
 
     @Override
     public User getEntityByEmail(String email) {
-        return repository.findByEmail(email).orElseThrow(
-                () -> new IllegalArgumentException("Unable to find user with email: " + email )
-        );
+        log.atFine().log("Fetching user entity by email: %s", email);
+        return findUserByEmailOrThrow(email);
     }
 
     @Override
     @Transactional
     @CachePut(value = "users", key = "#result.id")
     public UserResponseDTO save(RegisterRequestDTO dto) {
-        if (repository.findByEmail(dto.email()).isPresent()) {
-            throw new IllegalArgumentException("Email already registered");
-        }
-
+        log.atInfo().log("Registering new user with email: %s", dto.email());
+        validateEmailNotRegistered(dto.email());
+        
         val user = mapper.toUser(dto);
-
         user.setPassword(passwordEncoder.encode(dto.password()));
         user.setRole(DEFAULT_ROLE);
         user.setVerified(false);
 
         val savedUser = repository.save(user);
+        log.atInfo().log("User registered successfully with id: %s", savedUser.getId());
+
         return mapper.toResponse(savedUser);
     }
 
@@ -70,16 +71,16 @@ public class UsersServiceImpl implements UsersService {
     @Transactional
     @CachePut(value = "users", key = "#result.id")
     public UserResponseDTO saveOauth2User(Oauth2UserCreateDTO dto) {
-        if (repository.findByEmail(dto.email()).isPresent()) {
-            throw new IllegalArgumentException("Email already registered");
-        }
-
+        log.atInfo().log("Registering OAuth2 user with email: %s", dto.email());
+        validateEmailNotRegistered(dto.email());
+        
         val user = mapper.toUser(dto);
-
         user.setRole(DEFAULT_ROLE);
         user.setVerified(true);
-
+        
         val savedUser = repository.save(user);
+        log.atInfo().log("OAuth2 user registered successfully with id: %s", savedUser.getId());
+
         return mapper.toResponse(savedUser);
     }
 
@@ -87,15 +88,13 @@ public class UsersServiceImpl implements UsersService {
     @Transactional
     @CacheEvict(value = "users", key = "#id")
     public UserResponseDTO update(UUID userId, UserUpdateDTO dto) {
-
-        val user = repository.findById(userId).orElseThrow(
-                        () -> new IllegalArgumentException("Unable to find user with id: " + userId )
-        );
-
+        log.atInfo().log("Updating user with id: %s", userId);
+        val user = findUserOrThrow(userId);
         user.setEmail(dto.email());
         user.setPassword(dto.password());
-
+        
         repository.save(user);
+        log.atInfo().log("User updated successfully: %s", userId);
 
         return mapper.toResponse(user);
     }
@@ -103,14 +102,12 @@ public class UsersServiceImpl implements UsersService {
     @Override
     @Transactional
     public UserResponseDTO updateVerifiedStatus(String email) {
-
-        val user = repository.findByEmail(email).orElseThrow(
-                () -> new IllegalArgumentException("Unable to find user with email: " + email )
-        );
-
+        log.atInfo().log("Updating verified status for email: %s", email);
+        val user = findUserByEmailOrThrow(email);
         user.setVerified(true);
-
+        
         repository.save(user);
+        log.atInfo().log("User verified successfully: %s", email);
 
         return mapper.toResponse(user);
     }
@@ -119,12 +116,27 @@ public class UsersServiceImpl implements UsersService {
     @Transactional
     @CacheEvict(value = "users", key = "#id")
     public void delete(UUID id) {
+        log.atInfo().log("Deleting user with id: %s", id);
+        
         if (!repository.existsById(id)) {
-
-            throw new IllegalArgumentException("Unable to find user with id: " + id);
+            throw new UserNotFoundException(id);
         }
-
+        
         repository.deleteById(id);
+        log.atInfo().log("User deleted successfully: %s", id);
     }
 
+    private User findUserOrThrow(UUID id) {
+        return repository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+    }
+
+    private User findUserByEmailOrThrow(String email) {
+        return repository.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
+    }
+
+    private void validateEmailNotRegistered(String email) {
+        if (repository.findByEmail(email).isPresent()) {
+            throw new EmailAlreadyRegisteredException(email);
+        }
+    }
 }

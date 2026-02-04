@@ -2,6 +2,10 @@ package com.marcos.leairning.security.auth;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.marcos.leairning.email.EmailService;
+import com.marcos.leairning.exception.AccountNotVerifiedException;
+import com.marcos.leairning.exception.InvalidCredentialsException;
+import com.marcos.leairning.exception.InvalidVerificationTokenException;
+import com.marcos.leairning.exception.UserNotFoundException;
 import com.marcos.leairning.security.jwt.JwtService;
 import com.marcos.leairning.security.token.TokenPairService;
 import com.marcos.leairning.users.*;
@@ -44,8 +48,8 @@ class AuthServiceImplTest {
 
     @Test
     void login_withValidCredentials_returnsAuthCode() {
-        var entity = createVerifiedEntity();
-        var dto = createVerifiedUser();
+        val entity = createVerifiedEntity();
+        val dto = createVerifiedUser();
         
         when(usersService.getEntityByEmail("test@example.com")).thenReturn(entity);
         when(passwordEncoder.matches("password123!", entity.getPassword())).thenReturn(true);
@@ -61,36 +65,36 @@ class AuthServiceImplTest {
 
     @Test
     void login_withInvalidPassword_throws() {
-        var entity = createVerifiedEntity();
+        val entity = createVerifiedEntity();
         
         when(usersService.getEntityByEmail("test@example.com")).thenReturn(entity);
         when(passwordEncoder.matches("wrong", entity.getPassword())).thenReturn(false);
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(InvalidCredentialsException.class,
                 () -> authService.login(new LoginRequestDTO("test@example.com", "wrong")));
     }
 
     @Test
     void login_withUnverifiedAccount_throws() {
-        var entity = createVerifiedEntity();
+        val entity = createVerifiedEntity();
         entity.setVerified(false);
         
         when(usersService.getEntityByEmail("test@example.com")).thenReturn(entity);
         when(passwordEncoder.matches("password123!", entity.getPassword())).thenReturn(true);
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(AccountNotVerifiedException.class,
                 () -> authService.login(new LoginRequestDTO("test@example.com", "password123!")));
     }
 
     @Test
     void login_withNonexistentEmail_throws() {
         when(usersService.getEntityByEmail("none@example.com"))
-                .thenThrow(new IllegalArgumentException("Unable to find user"));
-        assertThrows(IllegalArgumentException.class,
+                .thenThrow(new UserNotFoundException("none@example.com"));
+        assertThrows(UserNotFoundException.class,
                 () -> authService.login(new LoginRequestDTO("none@example.com", "password123!")));
     }
 
     @Test
     void register_savesUserAndSendsEmail() {
-        var request = new RegisterRequestDTO("new@example.com", "Test User", null, "USER", "password12345");
+        val request = new RegisterRequestDTO("new@example.com", "Test User", null, "USER", "password12345");
         authService.register(request);
         
         verify(usersService).save(request);
@@ -100,7 +104,7 @@ class AuthServiceImplTest {
 
     @Test
     void verify_withValidToken_verifiesUserAndReturnsAuthCode() {
-        var dto = createVerifiedUser();
+        val dto = createVerifiedUser();
         
         when(verificationTokenCache.getIfPresent("valid-token")).thenReturn("test@example.com");
         when(usersService.updateVerifiedStatus("test@example.com")).thenReturn(dto);
@@ -119,11 +123,11 @@ class AuthServiceImplTest {
     @Test
     void verify_withInvalidToken_throws() {
         when(verificationTokenCache.getIfPresent("bad-token")).thenReturn(null);
-        assertThrows(IllegalArgumentException.class, () -> authService.verify("bad-token"));
+        assertThrows(InvalidVerificationTokenException.class, () -> authService.verify("bad-token"));
     }
 
     private User createVerifiedEntity() {
-        var user = new User();
+        val user = new User();
         user.setId(UUID.randomUUID());
         user.setEmail("test@example.com");
         user.setPassword("encoded-password");

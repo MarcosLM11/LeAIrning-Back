@@ -2,6 +2,9 @@ package com.marcos.leairning.security.auth;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.marcos.leairning.email.EmailService;
+import com.marcos.leairning.exception.AccountNotVerifiedException;
+import com.marcos.leairning.exception.InvalidCredentialsException;
+import com.marcos.leairning.exception.InvalidVerificationTokenException;
 import com.marcos.leairning.security.jwt.JwtService;
 import com.marcos.leairning.security.token.TokenPair;
 import com.marcos.leairning.security.token.TokenPairService;
@@ -37,11 +40,11 @@ public class AuthServiceImpl implements AuthService {
         val user = usersService.getEntityByEmail(request.email());
         
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new IllegalArgumentException("Invalid credentials");
+            throw new InvalidCredentialsException();
         }
         
         if (!user.isVerified()) {
-            throw new IllegalArgumentException("Account not verified");
+            throw new AccountNotVerifiedException(request.email());
         }
         
         return generateAuthCode(mapper.toResponse(user));
@@ -64,7 +67,7 @@ public class AuthServiceImpl implements AuthService {
         val email = verificationTokenCache.getIfPresent(token);
         
         if (email == null) {
-            throw new IllegalArgumentException("Invalid or expired verification token");
+            throw new InvalidVerificationTokenException();
         }
         
         verificationTokenCache.invalidate(token);
