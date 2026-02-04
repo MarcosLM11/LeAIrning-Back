@@ -8,8 +8,15 @@ import java.util.UUID;
 
 public interface DocumentsService {
 
-    Page<DocumentResponseDTO> getDocuments(Pageable pageable);
-    List<DocumentResponseDTO> upload(List<MultipartFile> files);
-    DocumentResponseDTO getDocument(UUID id);
-    void deleteDocument(UUID id);
+    Page<DocumentResponseDTO> getDocuments(UUID userId, Pageable pageable);
+
+    List<DocumentResponseDTO> upload(UUID userId, List<MultipartFile> files);
+
+    DocumentResponseDTO getDocument(UUID userId, UUID documentId);
+
+    void deleteDocument(UUID userId, UUID documentId);
+
+    byte[] downloadDocument(UUID userId, UUID documentId);
+
+    void deleteDocuments(UUID userId, List<UUID> documentIds);
 }

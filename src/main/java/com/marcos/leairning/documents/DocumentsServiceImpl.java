@@ -6,6 +6,7 @@ import com.marcos.leairning.exception.DocumentAccessDeniedException;
 import com.marcos.leairning.exception.DocumentNotFoundException;
 import com.marcos.leairning.exception.DocumentProcessingException;
 import com.marcos.leairning.minio.MinioDocumentStorageService;
+import com.marcos.leairning.minio.MinioProcessingPipelineService;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.flogger.Flogger;
@@ -46,77 +47,103 @@ public class DocumentsServiceImpl implements DocumentsService {
     DocumentsRepository repository;
     DocumentsMapper mapper;
     MinioDocumentStorageService storageService;
+    MinioProcessingPipelineService pipelineService;
 
     @Override
-    public Page<DocumentResponseDTO> getDocuments(Pageable pageable) {
-        log.atFine().log("Fetching documents page: %d, size: %d", pageable.getPageNumber(), pageable.getPageSize());
-        return repository.findAll(pageable)
+    public Page<DocumentResponseDTO> getDocuments(UUID userId, Pageable pageable) {
+        log.atFine().log("Fetching documents for user %s, page: %d, size: %d", userId, pageable.getPageNumber(), pageable.getPageSize());
+        return repository.findByUserId(userId, pageable)
                 .map(mapper::toDTO);
     }
 
     @Override
     @Transactional
-    public List<DocumentResponseDTO> upload(List<MultipartFile> files) {
-        log.atInfo().log("Uploading %d documents", files.size());
+    public List<DocumentResponseDTO> upload(UUID userId, List<MultipartFile> files) {
+        log.atInfo().log("User %s uploading %d documents", userId, files.size());
         val result = files.stream()
-                .map(this::uploadDocument)
+                .map(file -> uploadDocument(userId, file))
                 .toList();
 
-        log.atInfo().log("Successfully uploaded %d documents", result.size());
+        log.atInfo().log("Successfully uploaded %d documents for user %s", result.size(), userId);
         return result;
     }
 
     @Override
     @IgnoreRateLimiting
-    @Cacheable(value = "documents", key = "#id")
-    public DocumentResponseDTO getDocument(UUID id) {
-        log.atFine().log("Fetching document with id: %s", id);
-        return mapper.toDTO(findDocumentOrThrow(id));
+    @Cacheable(value = "documents", key = "#userId + '-' + #documentId")
+    public DocumentResponseDTO getDocument(UUID userId, UUID documentId) {
+        log.atFine().log("Fetching document %s for user %s", documentId, userId);
+        return mapper.toDTO(findDocumentWithOwnershipValidation(documentId, userId));
     }
 
     @Override
     @Transactional
-    @CacheEvict(value = "documents", key = "#id")
-    public void deleteDocument(UUID id) {
-        log.atInfo().log("Deleting document with id: %s", id);
-        val document = findDocumentOrThrow(id);
+    @CacheEvict(value = "documents", key = "#userId + '-' + #documentId")
+    public void deleteDocument(UUID userId, UUID documentId) {
+        log.atInfo().log("User %s deleting document %s", userId, documentId);
+        val document = findDocumentWithOwnershipValidation(documentId, userId);
         storageService.delete(document.getStoragePath());
-        repository.deleteById(id);
-        log.atInfo().log("Document deleted successfully: %s", id);
+        repository.deleteById(documentId);
+        log.atInfo().log("Document %s deleted successfully by user %s", documentId, userId);
     }
 
-    private DocumentResponseDTO uploadDocument(MultipartFile file) {
+    @Override
+    public byte[] downloadDocument(UUID userId, UUID documentId) {
+        log.atFine().log("User %s downloading document %s", userId, documentId);
+        val document = findDocumentWithOwnershipValidation(documentId, userId);
+        return storageService.load(document.getStoragePath());
+    }
+
+    @Override
+    @Transactional
+    public void deleteDocuments(UUID userId, List<UUID> documentIds) {
+        log.atInfo().log("User %s batch deleting %d documents", userId, documentIds.size());
+        
+        val documentsToDelete = repository.findByIdInAndUserId(documentIds, userId);
+        
+        if (documentsToDelete.isEmpty()) {
+            log.atFine().log("No documents found to delete for user %s", userId);
+            return;
+        }
+
+        documentsToDelete.forEach(doc -> storageService.delete(doc.getStoragePath()));
+        
+        val idsToDelete = documentsToDelete.stream()
+                .map(Document::getId)
+                .toList();
+        
+        int deletedCount = repository.deleteByIdInAndUserId(idsToDelete, userId);
+        log.atInfo().log("Batch deleted %d documents for user %s", deletedCount, userId);
+    }
+
+    private DocumentResponseDTO uploadDocument(UUID userId, MultipartFile file) {
         validateDocument(file);
         val document = mapper.toEntity(file);
-        document.setUserId(UUID.randomUUID());
+        document.setUserId(userId);
         document.setFileName(sanitizeFilename(file.getOriginalFilename()));
         
         try {
             val objectPath = storageService.store(file.getBytes(), document);
             document.setStoragePath(objectPath);
-        
+            
         } catch (IOException e) {
             throw new DocumentProcessingException("Failed to read file bytes", e);
         }
         
         val saved = repository.save(document);
-        log.atFine().log("Document uploaded: %s", saved.getId());
+        pipelineService.copyToProcessing(saved.getStoragePath(), saved.getId());
+        log.atFine().log("Document %s uploaded by user %s", saved.getId(), userId);
         return mapper.toDTO(saved);
     }
 
-    public byte[] downloadDocument(UUID documentId, UUID userId) {
-        log.atFine().log("Downloading document %s for user %s", documentId, userId);
-        val document = findDocumentOrThrow(documentId);
-        
-        if (!document.getUserId().equals(userId)) {
-            throw new DocumentAccessDeniedException(documentId, userId);
-        
-        }
-        return storageService.load(document.getStoragePath());
-    }
-
-    private Document findDocumentOrThrow(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new DocumentNotFoundException(id));
+    private Document findDocumentWithOwnershipValidation(UUID documentId, UUID userId) {
+        return repository.findByIdAndUserId(documentId, userId)
+                .orElseThrow(() -> {
+                    if (repository.existsById(documentId)) {
+                        return new DocumentAccessDeniedException(documentId, userId);
+                    }
+                    return new DocumentNotFoundException(documentId);
+                });
     }
 
     public void validateDocument(MultipartFile file) {

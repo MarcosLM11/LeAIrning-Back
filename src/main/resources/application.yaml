@@ -7,6 +7,7 @@ leairning:
       users-expire-after-access: 60s
       rate-limit-maximum-size: 100000
       rate-limit-expire-after-access: 1h
+
   storage:
     minio:
       endpoint: http://localhost:9000
@@ -15,13 +16,21 @@ leairning:
       documents-bucket: leairning-documents
       processing-bucket: leairning-processing
       auto-create-buckets: true
+
+  pipeline:
+    chunk-size: 500
+    keep-separator: false
+    min-chunk-length: 10
+
   jwt:
     access-token-ttl: 30m
     refresh-token-ttl: 7d
+
   secret:
     jwt:
       value: ${JWT_SECRET:ThisIsADevelopmentSecretKeyThatShouldBeAtLeast64BytesLongForHS512Algorithm!}
       algorithm: HS512
+
   auth:
     frontend-url: ${FRONTEND_URL:http://localhost:4200}
 
@@ -75,7 +84,8 @@ spring:
     driver-class-name: org.postgresql.Driver
 
   jpa:
-    show-sql: true
+    show-sql: false
+    open-in-view: false
     hibernate:
       ddl-auto: none
 
@@ -99,6 +109,34 @@ spring:
       enabled: true
       max-file-size: 50MB
       max-request-size: 50MB
+
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        options:
+          model: llama3.2
+          temperature: 0.7
+      embedding:
+        options:
+          model: nomic-embed-text
+
+    vectorstore:
+      qdrant:
+        host: localhost
+        port: 6334
+        collection-name: documents
+        initialize-schema: true
+
+  cloud:
+    compatibility-verifier:
+      enabled: false
+    function:
+      definition: fileSupplier|metadataEnricher|documentReader|splitter|vectorStoreConsumer
+    integration:
+      poller:
+        fixed-delay: 5000
+        max-messages-per-poll: 1
 
 bucket4j:
   enabled: true
@@ -130,3 +168,8 @@ bucket4j:
           - capacity: 100
             time: 1
             unit: minutes
+
+logging:
+  level:
+    org.apache.fontbox: ERROR
+    org.apache.pdfbox: WARN
