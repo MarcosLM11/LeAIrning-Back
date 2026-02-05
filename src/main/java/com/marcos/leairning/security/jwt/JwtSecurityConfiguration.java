@@ -32,7 +32,9 @@ public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
             "/token/refresh",
             "/api/**",
             "/users/**",
-            "/documents/**"
+            "/documents/**",
+            "/conversations/**",
+            "/chat/**"
     };
 
     JwtSecretProperties properties;

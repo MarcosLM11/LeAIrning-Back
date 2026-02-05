@@ -4,10 +4,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
-
 import java.time.Duration;
-
-import static java.time.Duration.ofSeconds;
 
 @Data
 @Validated

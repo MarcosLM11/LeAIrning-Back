@@ -7,4 +7,8 @@ public class DocumentNotFoundException extends RuntimeException {
     public DocumentNotFoundException(UUID id) {
         super("Unable to find document with id: " + id);
     }
+
+    public DocumentNotFoundException(String message) {
+        super(message);
+    }
 }

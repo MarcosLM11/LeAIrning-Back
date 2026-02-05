@@ -34,6 +34,10 @@ leairning:
   auth:
     frontend-url: ${FRONTEND_URL:http://localhost:4200}
 
+  ai:
+    chat:
+      max-messages: 1000
+
 spring:
   config:
     import: optional:file:.env[.properties]
@@ -133,6 +137,9 @@ spring:
       enabled: false
     function:
       definition: fileSupplier|metadataEnricher|documentReader|splitter|vectorStoreConsumer
+      web:
+        export:
+          enabled: false
     integration:
       poller:
         fixed-delay: 5000
@@ -173,3 +180,7 @@ logging:
   level:
     org.apache.fontbox: ERROR
     org.apache.pdfbox: WARN
+
+logbook:
+  format:
+    style: http

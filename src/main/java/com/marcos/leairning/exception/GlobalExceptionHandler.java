@@ -1,8 +1,10 @@
 package com.marcos.leairning.exception;
 
 import lombok.extern.flogger.Flogger;
+import lombok.val;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.reactive.function.UnsupportedMediaTypeException;
@@ -20,6 +22,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DocumentNotFoundException.class)
     public ProblemDetail handleDocumentNotFound(DocumentNotFoundException ex) {
         log.atFine().log("Document not found: %s", ex.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(ConversationNotFoundException.class)
+    public ProblemDetail handleConversationNotFound(ConversationNotFoundException ex) {
+        log.atFine().log("Conversation not found: %s", ex.getMessage());
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
@@ -75,5 +83,35 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
         log.atFine().log("Bad request: %s", ex.getMessage());
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+        log.atSevere().withCause(ex).log("Validation error");
+
+        val message = ex.getBindingResult().getFieldErrors().stream()
+                .map(e -> e.getField() + ": " + e.getDefaultMessage())
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("Validation failed");
+
+        val problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, message);
+
+        problem.setTitle("Validation Error");
+
+        return problem;
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleGenericError(Exception ex) {
+        log.atSevere().withCause(ex).log("Unexpected error: %s", ex.getMessage());
+
+        val problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "An unexpected error occurred"
+        );
+
+        problem.setTitle("Internal Error");
+
+        return problem;
     }
 }
