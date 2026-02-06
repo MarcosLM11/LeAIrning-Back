@@ -7,6 +7,9 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.ChatMemoryRepository;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
@@ -14,12 +17,11 @@ import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
+import java.util.concurrent.atomic.AtomicInteger;
 import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
 
 @Flogger
@@ -31,17 +33,20 @@ public class ChatServiceImpl implements ChatService {
 
     private final ChatClient client;
     private final ChatMemory memory;
+    private final ChatMemoryRepository chatMemoryRepository;
     private final VectorStore vectorStore;
     private final ConversationService conversationService;
 
     public ChatServiceImpl(
             ChatClient client,
             ChatMemory memory,
+            ChatMemoryRepository chatMemoryRepository,
             VectorStore vectorStore,
             ConversationService conversationService
     ) {
         this.client = client;
         this.memory = memory;
+        this.chatMemoryRepository = chatMemoryRepository;
         this.vectorStore = vectorStore;
         this.conversationService = conversationService;
     }
@@ -84,6 +89,36 @@ public class ChatServiceImpl implements ChatService {
                 .content();
 
         return new ChatResponseDTO(answer, conversationId, Instant.now());
+    }
+
+    @Override
+    public List<ChatMessageDTO> getMessages(UUID userId, UUID conversationId) {
+        log.atInfo().log("Getting messages for userId=%s, conversationId=%s", userId, conversationId);
+
+        val userConversationId = userId + "_" + conversationId;
+
+        List<Message> messages = chatMemoryRepository.findByConversationId(userConversationId);
+
+        val counter = new AtomicInteger(0);
+        return messages.stream()
+                .filter(msg -> msg.getMessageType() == MessageType.USER ||
+                               msg.getMessageType() == MessageType.ASSISTANT)
+                .map(msg -> new ChatMessageDTO(
+                        userConversationId + "_" + counter.getAndIncrement(),
+                        mapMessageType(msg.getMessageType()),
+                        msg.getText(),
+                        Instant.now()
+                ))
+                .toList();
+    }
+
+    private String mapMessageType(MessageType type) {
+        return switch (type) {
+            case USER -> "user";
+            case ASSISTANT -> "assistant";
+            case SYSTEM -> "system";
+            case TOOL -> "tool";
+        };
     }
 
     private Filter.Expression buildFilterExpression(UUID userId, Set<UUID> documentIds) {

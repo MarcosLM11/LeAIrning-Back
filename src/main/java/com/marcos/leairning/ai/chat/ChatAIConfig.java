@@ -4,13 +4,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
-import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -29,13 +25,15 @@ public class ChatAIConfig {
                 .build();
     }
 
+    /**
+     * Creates the ChatClient bean.
+     * Note: MessageChatMemoryAdvisor is NOT configured here as a default advisor
+     * because we need to pass a dynamic conversationId per request in ChatServiceImpl.
+     * Adding it here would cause duplicate message storage.
+     */
     @Bean
-    ChatClient chatClient(ChatClient.Builder chatClientBuilder, VectorStore vectorStore, ChatMemory chatMemory) {
+    ChatClient chatClient(ChatClient.Builder chatClientBuilder) {
         return chatClientBuilder
-                .defaultAdvisors(
-                        QuestionAnswerAdvisor.builder(vectorStore)
-                                .searchRequest(SearchRequest.builder().build()).build(),
-                        MessageChatMemoryAdvisor.builder(chatMemory).build())
                 .defaultTools()
                 .build();
     }

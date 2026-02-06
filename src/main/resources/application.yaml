@@ -125,6 +125,12 @@ spring:
         options:
           model: nomic-embed-text
 
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: never  # Managed by Flyway migration V5
+
     vectorstore:
       qdrant:
         host: localhost

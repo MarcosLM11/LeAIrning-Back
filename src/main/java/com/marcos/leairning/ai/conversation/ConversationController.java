@@ -1,5 +1,7 @@
 package com.marcos.leairning.ai.conversation;
 
+import com.marcos.leairning.ai.chat.ChatMessageDTO;
+import com.marcos.leairning.ai.chat.ChatService;
 import com.marcos.leairning.web.CurrentUserId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -17,6 +19,7 @@ import java.util.UUID;
 public class ConversationController {
 
     private final ConversationService conversationService;
+    private final ChatService chatService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -41,6 +44,17 @@ public class ConversationController {
             @PathVariable UUID id
     ) {
         return conversationService.findById(userId, id);
+    }
+
+    @GetMapping("/{id}/messages")
+    public List<ChatMessageDTO> getMessages(
+            @CurrentUserId UUID userId,
+            @PathVariable UUID id
+    ) {
+        // First verify the conversation belongs to the user
+        conversationService.findById(userId, id);
+        // Then return the messages
+        return chatService.getMessages(userId, id);
     }
 
     @PatchMapping("/{id}")

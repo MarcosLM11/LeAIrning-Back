@@ -151,6 +151,11 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-tika-document-reader</artifactId>
         </dependency>
+        <!-- SPRING AI JDBC CHAT MEMORY (persistent chat history) -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-chat-memory-repository-jdbc</artifactId>
+        </dependency>
 
         <!-- FLYWAY POSTGRESQL -->
         <dependency>
