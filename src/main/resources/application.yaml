@@ -186,6 +186,7 @@ logging:
   level:
     org.apache.fontbox: ERROR
     org.apache.pdfbox: WARN
+    org.zalando.logbook: TRACE
 
 logbook:
   format:

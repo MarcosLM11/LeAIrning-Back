@@ -39,7 +39,7 @@ public class DocumentsController {
         return service.getDocuments(userId, pageable);
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public List<DocumentResponseDTO> upload(
             @CurrentUserId UUID userId,
             @RequestParam("files") List<MultipartFile> files) {
