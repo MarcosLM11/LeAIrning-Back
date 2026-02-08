@@ -34,7 +34,8 @@ public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
             "/users/**",
             "/documents/**",
             "/conversations/**",
-            "/chat/**"
+            "/chat/**",
+            "/quizz/**"
     };
 
     JwtSecretProperties properties;

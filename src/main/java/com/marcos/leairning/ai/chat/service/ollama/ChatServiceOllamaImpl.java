@@ -72,9 +72,6 @@ public class ChatServiceOllamaImpl implements ChatService {
                                 .similarityThreshold(0.5)
                                 .topK(3)
                                 .build())
-                        .documentPostProcessors(CompressionDocumentPostProcessor.builder()
-                                .chatClientBuilder(chatClientBuilder.clone())
-                                .build())
                         .build())
                 .build();
         val answer = chatClient.prompt()
