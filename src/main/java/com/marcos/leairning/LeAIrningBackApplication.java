@@ -1,6 +1,6 @@
 package com.marcos.leairning;
 
-import com.marcos.leairning.logging.LoggingUtils;
+import com.marcos.leairning.util.logging.LoggingUtils;
 import lombok.extern.flogger.Flogger;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;

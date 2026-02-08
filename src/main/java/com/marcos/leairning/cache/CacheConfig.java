@@ -16,7 +16,6 @@ import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import javax.cache.Caching;
-import java.time.Duration;
 import java.util.OptionalLong;
 import java.util.concurrent.TimeUnit;
 import static lombok.AccessLevel.PRIVATE;

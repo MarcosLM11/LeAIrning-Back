@@ -1,5 +1,7 @@
 package com.marcos.leairning.web;
 
+import com.marcos.leairning.util.web.CurrentUserId;
+import com.marcos.leairning.util.web.CurrentUserIdArgumentResolver;
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

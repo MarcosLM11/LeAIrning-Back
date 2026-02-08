@@ -126,6 +126,10 @@ spring:
           model: nomic-embed-text
 
     chat:
+      observations:
+        log-prompt: true
+        log-completion: true
+
       memory:
         repository:
           jdbc:

@@ -1,6 +1,6 @@
 package com.marcos.leairning.users;
 
-import com.marcos.leairning.jpa.AbstractJpaVersionedAuditableEntity;
+import com.marcos.leairning.util.jpa.AbstractJpaVersionedAuditableEntity;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

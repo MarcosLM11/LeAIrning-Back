@@ -1,6 +1,6 @@
 package com.marcos.leairning.documents;
 
-import com.marcos.leairning.web.CurrentUserId;
+import com.marcos.leairning.util.web.CurrentUserId;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.val;
