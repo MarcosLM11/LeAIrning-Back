@@ -26,12 +26,12 @@ public class ChatAIController {
     @PostMapping(path = "/ask", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ChatResponseDTO> ask(
             @CurrentUserId UUID userId,
-            @RequestHeader(name = "X-Conversation-Id", defaultValue = "default") String conversationId,
+            @RequestHeader(name = "X-Conversation-Id") UUID conversationId,
             @RequestBody @Valid ChatRequestDTO request) {
 
         log.atInfo().log("Chat request from userId=%s, conversationId=%s", userId, conversationId);
 
-        val response = service.askQuestion(request.question(), userId, conversationId);
+        val response = service.askQuestion(request, userId, conversationId);
         return ResponseEntity.ok(response);
     }
 }

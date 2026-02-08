@@ -16,7 +16,4 @@ public record ChatMessageDTO(
         String content,
         Instant timestamp
 ) {
-    public ChatMessageDTO  {
-        
-    }
 }

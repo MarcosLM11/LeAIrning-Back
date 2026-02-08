@@ -70,19 +70,19 @@ public class DocumentProcessingPipeline {
     public Function<Flux<DocumentContext>, Flux<Document>> documentReader() {
         return contextFlux -> contextFlux
                 .doOnNext(ctx -> log.atInfo().log("Reading document (%d bytes)", ctx.fileBytes().length))
-                .map(ctx -> {
+                .flatMapIterable(ctx -> {
                     try {
-                        List<Document> documents = new TikaDocumentReader(
-                                new ByteArrayResource(ctx.fileBytes())).get();
+                        var documents = new TikaDocumentReader(new ByteArrayResource(ctx.fileBytes())).get();
+
                         if (documents.isEmpty()) {
                             log.atWarning().log("TikaDocumentReader returned empty document list");
                             throw new DocumentReaderException("Failed to extract text from document");
                         }
-                        Document doc = documents.getFirst();
-                        addMetadata(doc, ctx);
-                        log.atInfo().log("Document extracted with metadata: userId=%s, documentId=%s",
-                                ctx.document().getUserId(), ctx.documentId());
-                        return doc;
+
+                        documents.forEach(doc -> addMetadata(doc, ctx));
+
+                        log.atInfo().log("Extracted %d documents with metadata: userId=%s, documentId=%s", documents.size(), ctx.document().getUserId(), ctx.documentId());
+                        return documents;
                     } catch (DocumentReaderException e) {
                         throw e;
                     } catch (Exception e) {
