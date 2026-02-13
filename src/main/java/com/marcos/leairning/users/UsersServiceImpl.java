@@ -44,6 +44,12 @@ public class UsersServiceImpl implements UsersService {
     }
 
     @Override
+    public Optional<UserResponseDTO> getByEmailAndProvider(String email, String provider) {
+        log.atFine().log("Fetching user by email: %s and provider: %s", email, provider);
+        return repository.findByEmailAndProvider(email, provider).map(mapper::toResponse);
+    }
+
+    @Override
     public User getEntityByEmail(String email) {
         log.atFine().log("Fetching user entity by email: %s", email);
         return findUserByEmailOrThrow(email);
@@ -71,12 +77,13 @@ public class UsersServiceImpl implements UsersService {
     @Transactional
     @CachePut(value = "users", key = "#result.id")
     public UserResponseDTO saveOauth2User(Oauth2UserCreateDTO dto) {
-        log.atInfo().log("Registering OAuth2 user with email: %s", dto.email());
-        validateEmailNotRegistered(dto.email());
+        log.atInfo().log("Registering OAuth2 user with email: %s, provider: %s", dto.email(), dto.provider());
+        validateEmailNotRegisteredForProvider(dto.email(), dto.provider());
         
         val user = mapper.toUser(dto);
         user.setRole(DEFAULT_ROLE);
         user.setVerified(true);
+        user.setProvider(dto.provider());
         
         val savedUser = repository.save(user);
         log.atInfo().log("OAuth2 user registered successfully with id: %s", savedUser.getId());
@@ -137,6 +144,12 @@ public class UsersServiceImpl implements UsersService {
     private void validateEmailNotRegistered(String email) {
         if (repository.findByEmail(email).isPresent()) {
             throw new EmailAlreadyRegisteredException(email);
+        }
+    }
+
+    private void validateEmailNotRegisteredForProvider(String email, String provider) {
+        if (repository.findByEmailAndProvider(email, provider).isPresent()) {
+            throw new EmailAlreadyRegisteredException(email + " (provider: " + provider + ")");
         }
     }
 }

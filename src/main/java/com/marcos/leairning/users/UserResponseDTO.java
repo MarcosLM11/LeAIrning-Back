@@ -10,7 +10,8 @@ public record UserResponseDTO(
         String name,
         String pictureUrl,
         String role,
-        Boolean verified
+        Boolean verified,
+        String provider
 ) {
 
 }

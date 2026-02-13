@@ -36,4 +36,7 @@ public class User extends AbstractJpaVersionedAuditableEntity {
 
     @Column(name = "verified", nullable = false)
     private boolean verified;
+
+    @Column(name = "provider", nullable = false)
+    private String provider = "local";
 }

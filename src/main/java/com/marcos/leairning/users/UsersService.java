@@ -12,6 +12,8 @@ public interface UsersService {
 
     Optional<UserResponseDTO> getByEmail(String email);
 
+    Optional<UserResponseDTO> getByEmailAndProvider(String email, String provider);
+
     User getEntityByEmail(String email);
 
     UserResponseDTO save(RegisterRequestDTO user);

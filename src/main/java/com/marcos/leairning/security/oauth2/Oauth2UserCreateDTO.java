@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 public record Oauth2UserCreateDTO(
         @Email @NotBlank String email,
         @NotBlank String name,
-        String pictureUrl
+        String pictureUrl,
+        @NotBlank String provider
 ) {
 }
