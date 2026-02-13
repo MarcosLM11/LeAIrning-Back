@@ -1,0 +1,25 @@
+${AnsiColor.BLUE}
+${AnsiColor.BLUE}    ██╗     ███████╗ █████╗ ██╗██████╗ ███╗   ██╗██╗███╗   ██╗ ██████╗
+${AnsiColor.BLUE}    ██║     ██╔════╝██╔══██╗██║██╔══██╗████╗  ██║██║████╗  ██║██╔════╝
+${AnsiColor.BLUE}    ██║     █████╗  ███████║██║██████╔╝██╔██╗ ██║██║██╔██╗ ██║██║  ███╗
+${AnsiColor.BLUE}    ██║     ██╔══╝  ██╔══██║██║██╔══██╗██║╚██╗██║██║██║╚██╗██║██║   ██║
+${AnsiColor.BLUE}    ███████╗███████╗██║  ██║██║██║  ██║██║ ╚████║██║██║ ╚████║╚██████╔╝
+${AnsiColor.BLUE}    ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═══╝ ╚═════╝
+${AnsiColor.BRIGHT_BLUE}
+${AnsiColor.BRIGHT_BLUE}                    Backend Service - RAG AI Platform
+${AnsiColor.DEFAULT}
+${AnsiColor.GREEN}    ╔══════════════════════════════════════════════════════════════════╗
+${AnsiColor.GREEN}    ║${AnsiColor.DEFAULT}  Application: ${AnsiStyle.BOLD}LeAIrning-Back${AnsiStyle.NORMAL}                                    ${AnsiColor.GREEN}║
+${AnsiColor.GREEN}    ║${AnsiColor.DEFAULT}  Version:     ${AnsiStyle.BOLD}${application.version}${AnsiStyle.NORMAL}                                       ${AnsiColor.GREEN}║
+${AnsiColor.GREEN}    ║${AnsiColor.DEFAULT}  Author:      ${AnsiStyle.BOLD}${application.author}${AnsiStyle.NORMAL}                          ${AnsiColor.GREEN}║
+${AnsiColor.GREEN}    ╠══════════════════════════════════════════════════════════════════╣
+${AnsiColor.GREEN}    ║${AnsiColor.DEFAULT}  Java:        ${AnsiStyle.BOLD}25${AnsiStyle.NORMAL}                                                 ${AnsiColor.GREEN}║
+${AnsiColor.GREEN}    ║${AnsiColor.DEFAULT}  Spring Boot: ${AnsiStyle.BOLD}4.0.2${AnsiStyle.NORMAL}                                              ${AnsiColor.GREEN}║
+${AnsiColor.GREEN}    ║${AnsiColor.DEFAULT}  Spring AI:   ${AnsiStyle.BOLD}2.0.0-M2${AnsiStyle.NORMAL}                                           ${AnsiColor.GREEN}║
+${AnsiColor.GREEN}    ╠══════════════════════════════════════════════════════════════════╣
+${AnsiColor.GREEN}    ║${AnsiColor.DEFAULT}  Architecture:${AnsiStyle.BOLD} Modular Monolith / RAG AI${AnsiStyle.NORMAL}                       ${AnsiColor.GREEN}║
+${AnsiColor.GREEN}    ║${AnsiColor.DEFAULT}  Features:    ${AnsiStyle.BOLD}Document Management, AI Chat, Quiz Generation${AnsiStyle.NORMAL}    ${AnsiColor.GREEN}║
+${AnsiColor.GREEN}    ╚══════════════════════════════════════════════════════════════════╝
+${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_BLACK}    Ready to learn with AI! 🚀
+${AnsiColor.DEFAULT}
