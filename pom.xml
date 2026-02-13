@@ -155,6 +155,12 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-tika-document-reader</artifactId>
         </dependency>
+        <!-- APACHE TIKA LANGUAGE DETECTION -->
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-langdetect-optimaize</artifactId>
+            <version>3.0.0</version>
+        </dependency>
         <!-- SPRING AI JDBC CHAT MEMORY (persistent chat history) -->
         <dependency>
             <groupId>org.springframework.ai</groupId>

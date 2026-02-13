@@ -1,6 +1,6 @@
 package com.marcos.leairning.ai.chat.service.ollama;
 
-import com.marcos.leairning.ai.chat.config.CompressionDocumentPostProcessor;
+import com.marcos.leairning.ai.chat.config.TranslateResponsePostProcessor;
 import com.marcos.leairning.ai.chat.dto.ChatMessageDTO;
 import com.marcos.leairning.ai.chat.dto.ChatRequestDTO;
 import com.marcos.leairning.ai.chat.dto.ChatResponseDTO;
@@ -12,7 +12,6 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.preretrieval.query.transformation.RewriteQueryTransformer;
-import org.springframework.ai.rag.preretrieval.query.transformation.TranslationQueryTransformer;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
@@ -57,10 +56,6 @@ public class ChatServiceOllamaImpl implements ChatService {
                 .defaultSystem(systemPromptTemplate)
                 .defaultAdvisors(RetrievalAugmentationAdvisor.builder()
                         .queryTransformers(
-                                TranslationQueryTransformer.builder()
-                                        .chatClientBuilder(chatClientBuilder.clone())
-                                        .targetLanguage("english")
-                                        .build(),
                                 RewriteQueryTransformer.builder()
                                         .chatClientBuilder(chatClientBuilder.clone())
                                         .targetSearchSystem("vector store")
@@ -72,6 +67,11 @@ public class ChatServiceOllamaImpl implements ChatService {
                                 .similarityThreshold(0.5)
                                 .topK(3)
                                 .build())
+                        .documentPostProcessors(
+                                TranslateResponsePostProcessor.builder()
+                                        .chatClientBuilder(chatClientBuilder)
+                                        .build()
+                        )
                         .build())
                 .build();
         val answer = chatClient.prompt()
