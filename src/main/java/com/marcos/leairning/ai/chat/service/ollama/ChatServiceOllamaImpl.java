@@ -10,6 +10,8 @@ import lombok.extern.flogger.Flogger;
 import lombok.val;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.preretrieval.query.transformation.RewriteQueryTransformer;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
@@ -52,6 +54,11 @@ public class ChatServiceOllamaImpl implements ChatService {
                 feb.eq("userId", userId.toString()),
                 feb.in("documentId", documentIds.stream().map(UUID::toString).toArray())
         ).build();
+
+        // Save user message to chat memory before calling LLM
+        val userMessage = new UserMessage(request.question());
+        chatMemory.add(compositeId, userMessage);
+
         val chatClient = chatClientBuilder.clone()
                 .defaultSystem(systemPromptTemplate)
                 .defaultAdvisors(RetrievalAugmentationAdvisor.builder()
@@ -79,6 +86,11 @@ public class ChatServiceOllamaImpl implements ChatService {
                 .advisors(a -> a.param(CONVERSATION_ID, compositeId))
                 .call()
                 .content();
+
+        // Save assistant response to chat memory
+        val assistantMessage = new AssistantMessage(answer);
+        chatMemory.add(compositeId, assistantMessage);
+
         log.atInfo().log("Chat response generated for conversationId=%s", compositeId);
         return new ChatResponseDTO(answer, conversationId.toString(), Instant.now());
     }
