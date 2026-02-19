@@ -1,11 +1,15 @@
 package com.marcos.leairning.security.oauth2;
 
+import io.netty.channel.ChannelOption;
 import lombok.extern.flogger.Flogger;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.netty.http.client.HttpClient;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -21,8 +25,13 @@ public class GitHubEmailService {
     private final WebClient webClient;
 
     public GitHubEmailService(WebClient.Builder webClientBuilder) {
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
+                .responseTimeout(Duration.ofSeconds(10));
+
         this.webClient = webClientBuilder
                 .baseUrl("https://api.github.com")
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
 

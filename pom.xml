@@ -251,16 +251,10 @@
             <classifier>osx-aarch_64</classifier>
         </dependency>
 
-        <!-- LOGBOOK ZALANDO -->
+        <!-- OPENTELEMETRY -->
         <dependency>
-            <groupId>org.zalando</groupId>
-            <artifactId>logbook-spring-boot-starter</artifactId>
-            <version>4.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zalando</groupId>
-            <artifactId>logbook-netty</artifactId>
-            <version>4.0.1</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-opentelemetry</artifactId>
         </dependency>
 
         <!-- TESTING -->

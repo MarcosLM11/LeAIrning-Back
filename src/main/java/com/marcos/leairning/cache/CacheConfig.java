@@ -54,7 +54,7 @@ public class CacheConfig {
     Cache<String, TokenPair> tokenPairCache() {
         return Caffeine.newBuilder()
                 .maximumSize(10_000)
-                .expireAfterWrite(60, TimeUnit.SECONDS)
+                .expireAfterWrite(5, TimeUnit.MINUTES)
                 .build();
     }
 

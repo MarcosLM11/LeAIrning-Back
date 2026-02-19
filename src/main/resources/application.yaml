@@ -198,14 +198,19 @@ bucket4j:
             time: 1
             unit: minutes
 
+management:
+  otlp:
+    metrics:
+      export:
+        enabled: false
+    tracing:
+      export:
+        enabled: false
+
 logging:
   level:
     org.apache.fontbox: ERROR
     org.apache.pdfbox: WARN
-
-logbook:
-  format:
-    style: http
 
 # Application metadata for banner
 application:
