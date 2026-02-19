@@ -131,7 +131,7 @@ spring:
         pull-model-strategy: when_missing
       chat:
         options:
-          model: granite3.3:2b
+          model: granite3.3:8b
           num-ctx: 4096
       embedding:
         options:

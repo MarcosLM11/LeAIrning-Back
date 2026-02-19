@@ -13,6 +13,12 @@ import org.springframework.web.reactive.function.UnsupportedMediaTypeException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(QuizzNotFoundException.class)
+    public ProblemDetail handleQuizzNotFound(QuizzNotFoundException ex) {
+        log.atFine().log("Quizz not found: %s", ex.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
     @ExceptionHandler(UserNotFoundException.class)
     public ProblemDetail handleUserNotFound(UserNotFoundException ex) {
         log.atFine().log("User not found: %s", ex.getMessage());
