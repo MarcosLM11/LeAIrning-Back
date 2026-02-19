@@ -65,25 +65,25 @@ public class QuizzService {
         return quizzRepository.findAllByUserId(userId, pageable);
     }
 
-    public Quizz getQuizz(UUID quizzId) {
-        val entity = quizzRepository.findById(quizzId).orElseThrow(
-                () -> new QuizzNotFoundException("Quizz not found: " + quizzId)
-        );
-
+    public Quizz getQuizz(UUID userId, UUID quizzId) {
+        val entity = findByIdAndUserIdOrThrow(quizzId, userId);
         return objectMapper.readValue(entity.getQuizz(), Quizz.class);
     }
 
-    public void deleteQuizz(UUID quizzId) {
-        quizzRepository.deleteById(quizzId);
+    public void deleteQuizz(UUID userId, UUID quizzId) {
+        findByIdAndUserIdOrThrow(quizzId, userId);
+        quizzRepository.deleteByIdAndUserId(quizzId, userId);
     }
 
-    public void updateQuizzScore(UUID quizzId, int score) {
-        val entity = quizzRepository.findById(quizzId).orElseThrow(
-                () -> new QuizzNotFoundException("Quizz not found: " + quizzId)
-        );
-
+    public void updateQuizzScore(UUID userId, UUID quizzId, int score) {
+        val entity = findByIdAndUserIdOrThrow(quizzId, userId);
         entity.setLastScore(score);
         quizzRepository.save(entity);
+    }
+
+    private QuizzEntity findByIdAndUserIdOrThrow(UUID quizzId, UUID userId) {
+        return quizzRepository.findByIdAndUserId(quizzId, userId)
+                .orElseThrow(() -> new QuizzNotFoundException("Quizz not found: " + quizzId));
     }
 
     private String extractDocumentContent(UUID userId, UUID documentId) {

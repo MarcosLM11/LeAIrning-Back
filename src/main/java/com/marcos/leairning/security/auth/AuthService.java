@@ -1,5 +1,7 @@
 package com.marcos.leairning.security.auth;
 
+import java.util.UUID;
+
 public interface AuthService {
 
     String login(LoginRequestDTO request);
@@ -7,4 +9,6 @@ public interface AuthService {
     void register(RegisterRequestDTO request);
 
     String verify(String token);
+
+    void logout(UUID userId);
 }

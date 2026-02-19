@@ -1,11 +1,14 @@
 package com.marcos.leairning.security.auth;
 
+import com.giffing.bucket4j.spring.boot.starter.context.RateLimiting;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.marcos.leairning.email.EmailService;
 import com.marcos.leairning.exception.AccountNotVerifiedException;
 import com.marcos.leairning.exception.InvalidCredentialsException;
 import com.marcos.leairning.exception.InvalidVerificationTokenException;
+import com.marcos.leairning.exception.UserNotFoundException;
 import com.marcos.leairning.security.jwt.JwtService;
+import com.marcos.leairning.security.jwt.RevokedTokenService;
 import com.marcos.leairning.security.token.TokenPair;
 import com.marcos.leairning.security.token.TokenPairService;
 import com.marcos.leairning.users.UserResponseDTO;
@@ -24,6 +27,7 @@ import java.util.UUID;
 @Flogger
 @Service
 @RequiredArgsConstructor
+@RateLimiting(name = "strict")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthServiceImpl implements AuthService {
 
@@ -31,23 +35,25 @@ public class AuthServiceImpl implements AuthService {
     UsersMapper mapper;
     PasswordEncoder passwordEncoder;
     JwtService jwtService;
+    RevokedTokenService revokedTokenService;
     TokenPairService tokenPairService;
     EmailService emailService;
     Cache<String, String> verificationTokenCache;
 
     @Override
     public String login(LoginRequestDTO request) {
-        val user = usersService.getEntityByEmail(request.email());
-        
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+        try {
+            val user = usersService.getEntityByEmail(request.email());
+            if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+                throw new InvalidCredentialsException();
+            }
+            if (!user.isVerified()) {
+                throw new AccountNotVerifiedException();
+            }
+            return generateAuthCode(mapper.toResponse(user));
+        } catch (UserNotFoundException e) {
             throw new InvalidCredentialsException();
         }
-        
-        if (!user.isVerified()) {
-            throw new AccountNotVerifiedException(request.email());
-        }
-        
-        return generateAuthCode(mapper.toResponse(user));
     }
 
     @Override
@@ -83,6 +89,12 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return authCode;
+    }
+
+    @Override
+    public void logout(UUID userId) {
+        revokedTokenService.revokeAllForUser(userId);
+        log.atInfo().log("All tokens revoked for user: %s", userId);
     }
 
     private String generateAuthCode(UserResponseDTO user) {

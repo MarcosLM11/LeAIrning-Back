@@ -1,5 +1,6 @@
 package com.marcos.leairning.ai.quizz;
 
+import com.marcos.leairning.security.annotations.BusinessAuthorityOnly;
 import com.marcos.leairning.util.web.CurrentUserId;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @Flogger
+@BusinessAuthorityOnly
 @RestController
 @RequestMapping("/quizz")
 @RequiredArgsConstructor
@@ -39,21 +41,19 @@ public class QuizzController {
     }
 
     @GetMapping(path = "/{quizzId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Quizz> getQuizz(@PathVariable UUID quizzId) {
-        return ResponseEntity.ok(quizzService.getQuizz(quizzId));
+    public ResponseEntity<Quizz> getQuizz(@CurrentUserId UUID userId, @PathVariable UUID quizzId) {
+        return ResponseEntity.ok(quizzService.getQuizz(userId, quizzId));
     }
 
     @DeleteMapping("/{quizzId}")
-    public ResponseEntity<Void> deleteQuizz(@PathVariable UUID quizzId) {
-        quizzService.deleteQuizz(quizzId);
+    public ResponseEntity<Void> deleteQuizz(@CurrentUserId UUID userId, @PathVariable UUID quizzId) {
+        quizzService.deleteQuizz(userId, quizzId);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{quizzId}/score")
-    public ResponseEntity<Void> updateQuizzScore(@PathVariable UUID quizzId, @RequestParam int score) {
-        quizzService.updateQuizzScore(quizzId, score);
+    public ResponseEntity<Void> updateQuizzScore(@CurrentUserId UUID userId, @PathVariable UUID quizzId, @RequestParam int score) {
+        quizzService.updateQuizzScore(userId, quizzId, score);
         return ResponseEntity.noContent().build();
     }
-
-
 }

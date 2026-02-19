@@ -3,6 +3,7 @@ package com.marcos.leairning.users;
 import com.marcos.leairning.exception.EmailAlreadyRegisteredException;
 import com.marcos.leairning.exception.UserNotFoundException;
 import com.marcos.leairning.security.auth.RegisterRequestDTO;
+import com.marcos.leairning.security.jwt.RevokedTokenService;
 import com.marcos.leairning.security.oauth2.Oauth2UserCreateDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -29,6 +30,7 @@ public class UsersServiceImpl implements UsersService {
     UsersRepository repository;
     UsersMapper mapper;
     PasswordEncoder passwordEncoder;
+    RevokedTokenService revokedTokenService;
 
     @Override
     @Cacheable(value = "users", key = "#id")
@@ -93,16 +95,15 @@ public class UsersServiceImpl implements UsersService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "users", key = "#id")
+    @CacheEvict(value = "users", key = "#userId")
     public UserResponseDTO update(UUID userId, UserUpdateDTO dto) {
         log.atInfo().log("Updating user with id: %s", userId);
         val user = findUserOrThrow(userId);
         user.setEmail(dto.email());
-        user.setPassword(dto.password());
-        
+        user.setPassword(passwordEncoder.encode(dto.password()));
         repository.save(user);
+        revokedTokenService.revokeAllForUser(userId);
         log.atInfo().log("User updated successfully: %s", userId);
-
         return mapper.toResponse(user);
     }
 
@@ -124,12 +125,11 @@ public class UsersServiceImpl implements UsersService {
     @CacheEvict(value = "users", key = "#id")
     public void delete(UUID id) {
         log.atInfo().log("Deleting user with id: %s", id);
-        
         if (!repository.existsById(id)) {
             throw new UserNotFoundException(id);
         }
-        
         repository.deleteById(id);
+        revokedTokenService.revokeAllForUser(id);
         log.atInfo().log("User deleted successfully: %s", id);
     }
 

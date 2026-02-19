@@ -3,7 +3,6 @@ package com.marcos.leairning.security.refreshtoken;
 import com.marcos.leairning.security.annotations.RefreshTokenAuthorityOnly;
 import com.marcos.leairning.security.jwt.JwtService;
 import com.marcos.leairning.security.token.TokenPair;
-import com.marcos.leairning.security.token.TokenPairService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -23,12 +22,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class RefreshTokenController {
 
     JwtService jwtService;
-    TokenPairService tokenPairService;
 
     @PostMapping("/refresh")
     public ResponseEntity<TokenPair> refresh(@AuthenticationPrincipal Jwt jwt) {
         val tokenPair = jwtService.rotateFromJwt(jwt);
-        val code = tokenPairService.add(tokenPair);
         return ResponseEntity.ok(tokenPair);
     }
 }

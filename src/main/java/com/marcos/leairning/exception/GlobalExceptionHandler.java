@@ -51,7 +51,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccountNotVerifiedException.class)
     public ProblemDetail handleAccountNotVerified(AccountNotVerifiedException ex) {
-        log.atFine().log("Account not verified: %s", ex.getMessage());
+        log.atFine().log("Account not verified");
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 

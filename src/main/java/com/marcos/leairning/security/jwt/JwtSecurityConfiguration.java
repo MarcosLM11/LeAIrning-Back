@@ -12,9 +12,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import javax.crypto.spec.SecretKeySpec;
@@ -30,6 +33,7 @@ public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
 
     private static final String[] SECURED_PATTERNS = {
             "/token/refresh",
+            "/auth/logout",
             "/api/**",
             "/users/**",
             "/documents/**",
@@ -39,6 +43,7 @@ public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
     };
 
     JwtSecretProperties properties;
+    RevokedTokenService revokedTokenService;
 
     @SneakyThrows
     @Order(HIGEST_PRECEDENCE + 4_000)
@@ -69,7 +74,11 @@ public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
         val bytes = secret.getBytes();
         val algorithm = properties.getAlgorithm();
         val originalKey = new SecretKeySpec(bytes, 0, bytes.length, algorithm);
-
-        return withSecretKey(originalKey).macAlgorithm(MacAlgorithm.valueOf(algorithm)).build();
+        val decoder = withSecretKey(originalKey).macAlgorithm(MacAlgorithm.valueOf(algorithm)).build();
+        val validator = new DelegatingOAuth2TokenValidator<>(
+                new JwtTimestampValidator(),
+                new RevokedTokenValidator(revokedTokenService));
+        decoder.setJwtValidator(validator);
+        return decoder;
     }
 }

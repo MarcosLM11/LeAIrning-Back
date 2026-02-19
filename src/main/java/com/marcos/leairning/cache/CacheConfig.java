@@ -16,6 +16,7 @@ import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import javax.cache.Caching;
+import java.time.Instant;
 import java.util.OptionalLong;
 import java.util.concurrent.TimeUnit;
 import static lombok.AccessLevel.PRIVATE;
@@ -62,6 +63,14 @@ public class CacheConfig {
         return Caffeine.newBuilder()
                 .maximumSize(10_000)
                 .expireAfterWrite(24, TimeUnit.HOURS)
+                .build();
+    }
+
+    @Bean
+    Cache<String, Instant> revokedTokensCache() {
+        return Caffeine.newBuilder()
+                .maximumSize(100_000)
+                .expireAfterWrite(7, TimeUnit.DAYS)
                 .build();
     }
 
