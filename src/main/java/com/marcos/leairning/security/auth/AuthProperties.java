@@ -3,8 +3,8 @@ package com.marcos.leairning.security.auth;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
-
 import java.time.Duration;
+import java.util.List;
 
 @Data
 @Validated
@@ -15,4 +15,5 @@ public class AuthProperties {
 
     private String frontendUrl = "http://localhost:4200";
     private Duration verificationTokenTtl = Duration.ofHours(24);
+    private List<String> trustedProxies = List.of();
 }

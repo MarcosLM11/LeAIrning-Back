@@ -7,6 +7,7 @@ import com.marcos.leairning.exception.DocumentNotFoundException;
 import com.marcos.leairning.exception.DocumentProcessingException;
 import com.marcos.leairning.minio.MinioDocumentStorageService;
 import com.marcos.leairning.minio.MinioProcessingPipelineService;
+import org.apache.tika.Tika;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.flogger.Flogger;
@@ -43,6 +44,8 @@ public class DocumentsServiceImpl implements DocumentsService {
     private static final Set<String> ALLOWED_MIME_TYPES = Set.of(
             PDF, DOC, DOCX, TXT, CSV, MD
     );
+    private static final long MAX_DECOMPRESSION_RATIO = 100;
+    private static final Tika TIKA = new Tika();
 
     DocumentsRepository repository;
     DocumentsMapper mapper;
@@ -118,6 +121,7 @@ public class DocumentsServiceImpl implements DocumentsService {
 
     private DocumentResponseDTO uploadDocument(UUID userId, MultipartFile file) {
         validateDocument(file);
+        validateFileContent(file);
         val document = mapper.toEntity(file);
         document.setUserId(userId);
         document.setFileName(sanitizeFilename(file.getOriginalFilename()));
@@ -164,6 +168,34 @@ public class DocumentsServiceImpl implements DocumentsService {
         if (!ALLOWED_MIME_TYPES.contains(contentType)) {
             throw new UnsupportedMediaTypeException("Unsupported file type: " + contentType);
         }
+    }
+
+    void validateFileContent(MultipartFile file) {
+        try {
+            var detectedType = TIKA.detect(file.getInputStream());
+            if (!isContentTypeCompatible(detectedType)) {
+                throw new UnsupportedMediaTypeException(
+                        "File content type mismatch: detected " + detectedType);
+            }
+            // Decompression ratio check for ZIP-based formats (DOCX, etc.)
+            var compressedSize = file.getSize();
+            if (compressedSize > 0 && "application/zip".equals(detectedType)) {
+                var bytes = file.getBytes();
+                if (bytes.length > compressedSize * MAX_DECOMPRESSION_RATIO) {
+                    throw new UnsupportedMediaTypeException("File exceeds maximum decompression ratio");
+                }
+            }
+        } catch (IOException e) {
+            throw new DocumentProcessingException("Failed to validate file content", e);
+        }
+    }
+
+    private boolean isContentTypeCompatible(String detectedType) {
+        if (ALLOWED_MIME_TYPES.contains(detectedType)) {
+            return true;
+        }
+        // Tika detects CSV, MD, and other text variants as text/plain
+        return TXT.equals(detectedType);
     }
 
     public String sanitizeFilename(String filename) {

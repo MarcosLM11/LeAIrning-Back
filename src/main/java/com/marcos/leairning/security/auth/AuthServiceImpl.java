@@ -3,6 +3,7 @@ package com.marcos.leairning.security.auth;
 import com.giffing.bucket4j.spring.boot.starter.context.RateLimiting;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.marcos.leairning.email.EmailService;
+import com.marcos.leairning.exception.AccountLockedException;
 import com.marcos.leairning.exception.AccountNotVerifiedException;
 import com.marcos.leairning.exception.InvalidCredentialsException;
 import com.marcos.leairning.exception.InvalidVerificationTokenException;
@@ -39,19 +40,26 @@ public class AuthServiceImpl implements AuthService {
     TokenPairService tokenPairService;
     EmailService emailService;
     Cache<String, String> verificationTokenCache;
+    LoginAttemptService loginAttemptService;
 
     @Override
     public String login(LoginRequestDTO request) {
+        if (loginAttemptService.isLocked(request.email())) {
+            throw new AccountLockedException();
+        }
         try {
             val user = usersService.getEntityByEmail(request.email());
             if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+                loginAttemptService.recordFailedAttempt(request.email());
                 throw new InvalidCredentialsException();
             }
             if (!user.isVerified()) {
                 throw new AccountNotVerifiedException();
             }
+            loginAttemptService.resetAttempts(request.email());
             return generateAuthCode(mapper.toResponse(user));
         } catch (UserNotFoundException e) {
+            loginAttemptService.recordFailedAttempt(request.email());
             throw new InvalidCredentialsException();
         }
     }

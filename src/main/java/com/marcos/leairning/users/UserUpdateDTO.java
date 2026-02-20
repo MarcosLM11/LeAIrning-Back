@@ -1,7 +1,10 @@
 package com.marcos.leairning.users;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
+
 public record UserUpdateDTO(
-        String email,
-        String password
+        @Email String email,
+        @Size(min = 12) String password
 ) {
 }

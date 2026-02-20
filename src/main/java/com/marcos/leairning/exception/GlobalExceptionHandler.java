@@ -49,6 +49,12 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
+    @ExceptionHandler(AccountLockedException.class)
+    public ProblemDetail handleAccountLocked(AccountLockedException ex) {
+        log.atWarning().log("Account locked: login attempt on locked account");
+        return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+    }
+
     @ExceptionHandler(AccountNotVerifiedException.class)
     public ProblemDetail handleAccountNotVerified(AccountNotVerifiedException ex) {
         log.atFine().log("Account not verified");

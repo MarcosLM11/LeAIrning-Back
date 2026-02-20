@@ -2,6 +2,7 @@ package com.marcos.leairning.security.auth;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.marcos.leairning.email.EmailService;
+import com.marcos.leairning.exception.AccountLockedException;
 import com.marcos.leairning.exception.AccountNotVerifiedException;
 import com.marcos.leairning.exception.InvalidCredentialsException;
 import com.marcos.leairning.exception.InvalidVerificationTokenException;
@@ -30,6 +31,7 @@ class AuthServiceImplTest {
     TokenPairService tokenPairService;
     EmailService emailService;
     Cache<String, String> verificationTokenCache;
+    LoginAttemptService loginAttemptService;
     AuthServiceImpl authService;
 
     @BeforeEach
@@ -43,9 +45,11 @@ class AuthServiceImplTest {
         tokenPairService = mock(TokenPairService.class);
         emailService = mock(EmailService.class);
         verificationTokenCache = mock(Cache.class);
+        loginAttemptService = mock(LoginAttemptService.class);
         authService = new AuthServiceImpl(
                 usersService, mapper, passwordEncoder, jwtService,
-                revokedTokenService, tokenPairService, emailService, verificationTokenCache
+                revokedTokenService, tokenPairService, emailService,
+                verificationTokenCache, loginAttemptService
         );
     }
 
@@ -118,6 +122,47 @@ class AuthServiceImplTest {
     void verify_withInvalidToken_throws() {
         when(verificationTokenCache.getIfPresent("bad-token")).thenReturn(null);
         assertThrows(InvalidVerificationTokenException.class, () -> authService.verify("bad-token"));
+    }
+
+    @Test
+    void login_withLockedAccount_throwsAccountLocked() {
+        when(loginAttemptService.isLocked("test@example.com")).thenReturn(true);
+        assertThrows(AccountLockedException.class,
+                () -> authService.login(new LoginRequestDTO("test@example.com", "password123!")));
+        verifyNoInteractions(usersService);
+    }
+
+    @Test
+    void login_withInvalidPassword_recordsFailedAttempt() {
+        val entity = createVerifiedEntity();
+        when(usersService.getEntityByEmail("test@example.com")).thenReturn(entity);
+        when(passwordEncoder.matches("wrong", entity.getPassword())).thenReturn(false);
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.login(new LoginRequestDTO("test@example.com", "wrong")));
+        verify(loginAttemptService).recordFailedAttempt("test@example.com");
+    }
+
+    @Test
+    void login_withNonexistentEmail_recordsFailedAttempt() {
+        when(usersService.getEntityByEmail("none@example.com"))
+                .thenThrow(new UserNotFoundException("none@example.com"));
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.login(new LoginRequestDTO("none@example.com", "password123!")));
+        verify(loginAttemptService).recordFailedAttempt("none@example.com");
+    }
+
+    @Test
+    void login_withValidCredentials_resetsAttempts() {
+        val entity = createVerifiedEntity();
+        val dto = createVerifiedUser();
+        when(usersService.getEntityByEmail("test@example.com")).thenReturn(entity);
+        when(passwordEncoder.matches("password123!", entity.getPassword())).thenReturn(true);
+        when(mapper.toResponse(entity)).thenReturn(dto);
+        when(jwtService.generateAccessToken(dto)).thenReturn("access");
+        when(jwtService.generateRefreshToken(dto)).thenReturn("refresh");
+        when(tokenPairService.add(any())).thenReturn("auth-code");
+        authService.login(new LoginRequestDTO("test@example.com", "password123!"));
+        verify(loginAttemptService).resetAttempts("test@example.com");
     }
 
     @Test

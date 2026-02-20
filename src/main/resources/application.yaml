@@ -33,6 +33,13 @@ leairning:
 
   auth:
     frontend-url: ${FRONTEND_URL:http://localhost:4200}
+    trusted-proxies: []
+
+  security:
+    login-lockout:
+      max-attempts: 5
+      lockout-duration: 15m
+      cache-max-size: 100000
 
   ai:
     chat:

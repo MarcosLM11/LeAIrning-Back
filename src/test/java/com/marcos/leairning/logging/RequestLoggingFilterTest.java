@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -107,5 +109,31 @@ class RequestLoggingFilterTest {
     void shouldNotFilter_includesApiPaths() {
         request.setRequestURI("/api/users");
         assertFalse(filter.shouldNotFilter(request));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "code=abc123, code=***",
+            "token=secret123, token=***",
+            "code=abc&other=value, code=***&other=value",
+            "page=0&token=secret&size=20, page=0&token=***&size=20",
+            "page=0&size=20, page=0&size=20"
+    })
+    void redactQuery_redactsSensitiveParams(String input, String expected) {
+        assertEquals(expected, filter.redactQuery(input));
+    }
+
+    @Test
+    void redactQuery_returnsNull_forNullInput() {
+        assertNull(filter.redactQuery(null));
+    }
+
+    @Test
+    void doFilterInternal_redactsSensitiveQueryParams() throws ServletException, IOException {
+        request.setMethod("GET");
+        request.setRequestURI("/auth/code/exchange");
+        request.setQueryString("code=secret-auth-code");
+        filter.doFilterInternal(request, response, chain);
+        verify(chain).doFilter(request, response);
     }
 }

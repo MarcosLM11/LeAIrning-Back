@@ -43,8 +43,9 @@ public class DefaultWebSecurityConfiguration extends AbstractSecurityConfigurati
     @Bean(ACTUATOR_SECURITY_FILTER_CHAIN)
     public SecurityFilterChain actuatorSecurityConfig(HttpSecurity http) {
         http.securityMatcher(ACTUATOR_PATTERN)
-                .authorizeHttpRequests(
-                        request -> request.requestMatchers(GET).permitAll()
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers(GET, "/actuator/health").permitAll()
+                        .anyRequest().denyAll()
                 );
         return buildWithDefaults(http);
     }

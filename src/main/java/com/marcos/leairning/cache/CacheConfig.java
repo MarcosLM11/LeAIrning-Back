@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.jcache.configuration.CaffeineConfiguration;
 import com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider;
 import com.marcos.leairning.security.auth.AuthProperties;
+import com.marcos.leairning.security.auth.LoginLockoutProperties;
 import com.marcos.leairning.security.token.TokenPair;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -23,12 +24,13 @@ import static lombok.AccessLevel.PRIVATE;
 
 @EnableCaching
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties({CaffeineCacheProperties.class, AuthProperties.class})
+@EnableConfigurationProperties({CaffeineCacheProperties.class, AuthProperties.class, LoginLockoutProperties.class})
 @RequiredArgsConstructor
 @FieldDefaults(level = PRIVATE, makeFinal = true)
 public class CacheConfig {
 
     CaffeineCacheProperties properties;
+    LoginLockoutProperties lockoutProperties;
 
     // Para @Cacheable de Spring
     @Bean
@@ -71,6 +73,14 @@ public class CacheConfig {
         return Caffeine.newBuilder()
                 .maximumSize(100_000)
                 .expireAfterWrite(7, TimeUnit.DAYS)
+                .build();
+    }
+
+    @Bean
+    Cache<String, Integer> loginAttemptsCache() {
+        return Caffeine.newBuilder()
+                .maximumSize(lockoutProperties.getCacheMaxSize())
+                .expireAfterWrite(lockoutProperties.getLockoutDuration())
                 .build();
     }
 
