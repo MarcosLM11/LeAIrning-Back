@@ -41,6 +41,20 @@ El backend de LeAIrning es un **monolito modular** construido con Spring Boot 4.
 
 Cada dominio de negocio está organizado en su propio paquete siguiendo una **arquitectura por capas** (Controller → Service → Repository), con DTOs mapeados por MapStruct y excepciones de dominio específicas.
 
+### Funcionalidades principales
+
+| Funcionalidad | Descripción |
+|---|---|
+| **Gestión de usuarios** | CRUD completo con registro, verificación por email, login tradicional y OAuth2 (Google, GitHub) |
+| **Gestión de documentos** | Subida multipart, almacenamiento en MinIO (S3-compatible), listado y eliminación por usuario |
+| **Pipeline RAG** | Procesamiento de documentos: lectura (Tika) → chunking (Tokenizer) → embeddings (Ollama) → indexación (Qdrant) |
+| **Chat con IA** | Conversaciones contextualizadas con RAG: recuperación de fragmentos relevantes y generación de respuestas con Ollama |
+| **Generación de quizzes** | Creación automática de cuestionarios (multiple choice, verdadero/falso) a partir del contenido documental |
+| **Seguridad multi-capa** | JWT (HS512) con refresh token rotation, OAuth2, auth code exchange, rate limiting, protección brute-force |
+| **Email asíncrono** | Verificación de cuenta y bienvenida mediante plantillas Thymeleaf con envío `@Async` |
+| **Caché** | Caffeine para usuarios, documentos, rate-limit buckets y auth codes temporales |
+| **Observabilidad** | Logging estructurado (Flogger + Logstash JSON), request logging filter, OpenTelemetry |
+
 ---
 
 ## Arquitectura
