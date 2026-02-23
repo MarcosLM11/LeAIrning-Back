@@ -5,44 +5,81 @@ import com.marcos.leairning.exception.QuizzNotFoundException;
 import lombok.extern.flogger.Flogger;
 import lombok.val;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.rag.Query;
+import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
-import java.util.UUID;
+
+import java.security.SecureRandom;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Flogger
 @Service
 public class QuizzService {
 
+    private static final int MAX_CHUNKS = 20;
+    private static final int MIN_CHUNKS = 5;
+    private static final int CHARS_PER_CHUNK_ESTIMATE = 800;
+
     private static final String SYSTEM_PROMPT = """
-          You are a quiz generator for educational purposes.
-          Generate exactly {numberOfQuestions} questions at {difficulty} difficulty level \
-          based on the provided document content.
-          Each question must have a clear, concise answer derived from the document.
-          Set the type field of each question to {difficulty}.
-          You MUST respond with ONLY valid JSON, no additional text before or after.
-          The JSON must be an object with a "questions" array. Each element must have \
-          "question", "answer", and "type" fields.
-          Do not include numbering, markdown, or any text outside the JSON.""";
+        You are an educational quiz generator.
+        
+        Your task is to generate EXACTLY {numberOfQuestions} questions based ONLY on factual information explicitly present in the provided context.
+        
+        STRICT RULES:
+        
+        - Each question MUST be answerable using a specific factual statement from the context.
+        - DO NOT generate meta questions about the reader, chapters, intentions, benefits, or opinions.
+        - DO NOT ask questions about structure (e.g., "What is the purpose of this chapter?")
+        - DO NOT ask questions that cannot be answered with a concrete fact.
+        - Focus ONLY on:
+          - definitions
+          - concepts
+          - facts
+          - mechanisms
+          - examples described in the text
+        
+        - Each question MUST test knowledge of the content itself.
+        
+        BAD QUESTION EXAMPLES (DO NOT GENERATE):
+        - Who benefits from reading this chapter?
+        - What is the purpose of this text?
+        - Why is this chapter important?
+        
+        GOOD QUESTION EXAMPLES:
+        - What is X?
+        - How does X work?
+        - What happens when X occurs?
+        - What is the definition of X?
+        
+        You MUST respond with ONLY valid JSON format
+        """;
 
     private final DocumentsService documentsService;
     private final ChatClient.Builder chatClientBuilder;
     private final QuizzRepository quizzRepository;
     private final ObjectMapper objectMapper;
+    private final VectorStore vectorStore;
 
-    public QuizzService(QuizzRepository quizzRepository, DocumentsService documentsService, ChatClient.Builder chatClientBuilder, ObjectMapper objectMapper) {
+    private final SecureRandom random = new SecureRandom();
+
+    public QuizzService(QuizzRepository quizzRepository, DocumentsService documentsService, ChatClient.Builder chatClientBuilder, ObjectMapper objectMapper, VectorStore vectorStore) {
         this.quizzRepository = quizzRepository;
         this.documentsService = documentsService;
         this.chatClientBuilder = chatClientBuilder;
         this.objectMapper = objectMapper;
+        this.vectorStore = vectorStore;
     }
 
     public GeneratedQuizz generateQuizz(UUID userId, UUID documentId, int numberOfQuestions, QuestionType difficulty) {
-        val content = extractDocumentContent(userId, documentId);
+        val context = retrieveDiverseContext(userId, documentId, numberOfQuestions);
         val chatClient = chatClientBuilder.clone().build();
         log.atInfo().log("Generating quiz: %d questions, difficulty=%s, documentId=%s",
                 numberOfQuestions, difficulty, documentId);
@@ -50,7 +87,7 @@ public class QuizzService {
                 .system(s -> s.text(SYSTEM_PROMPT)
                         .param("numberOfQuestions", numberOfQuestions)
                         .param("difficulty", difficulty.name()))
-                .user(content)
+                .user(context)
                 .call()
                 .entity(Quizz.class);
         val entity = new QuizzEntity();
@@ -86,11 +123,74 @@ public class QuizzService {
                 .orElseThrow(() -> new QuizzNotFoundException("Quizz not found: " + quizzId));
     }
 
-    private String extractDocumentContent(UUID userId, UUID documentId) {
-        var bytes = documentsService.downloadDocument(userId, documentId);
-        var documents = new TikaDocumentReader(new ByteArrayResource(bytes)).get();
-        return documents.stream()
-                .map(org.springframework.ai.document.Document::getText)
-                .collect(Collectors.joining("\n"));
+    private String retrieveDiverseContext(
+            UUID userId,
+            UUID documentId,
+            int numberOfQuestions) {
+
+        var feb = new FilterExpressionBuilder();
+
+        var filter = feb.and(
+                feb.eq("userId", userId.toString()),
+                feb.eq("documentId", documentId.toString())
+        ).build();
+
+        int poolSize = Math.min(
+                MAX_CHUNKS,
+                Math.max(MIN_CHUNKS, numberOfQuestions * 4)
+        );
+
+        var retriever = VectorStoreDocumentRetriever.builder()
+                .vectorStore(vectorStore)
+                .similarityThreshold(0.15)
+                .topK(poolSize)
+                .filterExpression(filter)
+                .build();
+
+        List<String> queries = List.of(
+                "definitions and key concepts",
+                "important facts and details",
+                "core mechanisms and explanations",
+                "examples and applications",
+                "technical details"
+        );
+
+        Set<String> uniqueChunks = new LinkedHashSet<>();
+
+        for (String query : queries) {
+
+            var docs = retriever.retrieve(new Query(query));
+
+            docs.forEach(doc ->
+                    uniqueChunks.add(cleanChunk(doc.getText()))
+            );
+        }
+
+        List<String> shuffled = new ArrayList<>(uniqueChunks);
+
+        Collections.shuffle(shuffled, random);
+
+        int maxChunksToUse = Math.min(
+                shuffled.size(),
+                numberOfQuestions * 3
+        );
+
+        List<String> selected = shuffled.subList(0, maxChunksToUse);
+
+        log.atInfo().log("Selected %d chunks for quiz", selected.size());
+
+        return String.join("\n\n", selected);
+    }
+
+    /**
+     * Remove useless or noisy text
+     */
+    private String cleanChunk(String chunk) {
+
+        if (chunk == null) return "";
+
+        return chunk
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 }

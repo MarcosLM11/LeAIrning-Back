@@ -1,6 +1,5 @@
-package com.marcos.leairning.ai.chat.service.ollama;
+package com.marcos.leairning.ai.chat.service.impl;
 
-import com.marcos.leairning.ai.chat.config.TranslateResponsePostProcessor;
 import com.marcos.leairning.ai.chat.dto.ChatMessageDTO;
 import com.marcos.leairning.ai.chat.dto.ChatRequestDTO;
 import com.marcos.leairning.ai.chat.dto.ChatResponseDTO;
@@ -9,11 +8,10 @@ import com.marcos.leairning.ai.chat.service.ConversationService;
 import lombok.extern.flogger.Flogger;
 import lombok.val;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.messages.AssistantMessage;
-import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
-import org.springframework.ai.rag.preretrieval.query.transformation.RewriteQueryTransformer;
+import org.springframework.ai.rag.preretrieval.query.transformation.CompressionQueryTransformer;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
@@ -28,7 +26,7 @@ import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
 
 @Flogger
 @Service
-public class ChatServiceOllamaImpl implements ChatService {
+public class ChatServiceImpl implements ChatService {
 
     @Value("classpath:/promptTemplates/systemPromptTemplate.st")
     private Resource systemPromptTemplate;
@@ -38,7 +36,7 @@ public class ChatServiceOllamaImpl implements ChatService {
     private final ChatClient.Builder chatClientBuilder;
     private final VectorStore vectorStore;
 
-    public ChatServiceOllamaImpl(ChatMemory chatMemory, VectorStore vectorStore, ChatClient.Builder chatClientBuilder, ConversationService conversationService) {
+    public ChatServiceImpl(ChatMemory chatMemory, VectorStore vectorStore, ChatClient.Builder chatClientBuilder, ConversationService conversationService) {
         this.chatMemory = chatMemory;
         this.vectorStore = vectorStore;
         this.chatClientBuilder = chatClientBuilder;
@@ -52,46 +50,46 @@ public class ChatServiceOllamaImpl implements ChatService {
         var feb = new FilterExpressionBuilder();
         val filterExpression = feb.and(
                 feb.eq("userId", userId.toString()),
-                feb.in("documentId", documentIds.stream().map(UUID::toString).toArray())
+                feb.in("documentId", (Object[]) documentIds.stream().map(UUID::toString).toArray(String[]::new))
         ).build();
+        val documentRetriever = VectorStoreDocumentRetriever.builder()
+                .vectorStore(vectorStore)
+                .similarityThreshold(0.3)
+                .topK(10)
+                .filterExpression(filterExpression)
+                .build();
 
-        // Save user message to chat memory before calling LLM
-        val userMessage = new UserMessage(request.question());
-        chatMemory.add(compositeId, userMessage);
+        val queryTransformer = CompressionQueryTransformer.builder()
+                .chatClientBuilder(chatClientBuilder.clone())
+                .build();
 
+        val retrievalAdvisor = RetrievalAugmentationAdvisor.builder()
+                .queryTransformers(queryTransformer)
+                .documentRetriever(documentRetriever)
+                .build();
+
+        val memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         val chatClient = chatClientBuilder.clone()
                 .defaultSystem(systemPromptTemplate)
-                .defaultAdvisors(RetrievalAugmentationAdvisor.builder()
-                        .queryTransformers(
-                                RewriteQueryTransformer.builder()
-                                        .chatClientBuilder(chatClientBuilder.clone())
-                                        .targetSearchSystem("vector store")
-                                        .build()
-                        )
-                        .documentRetriever(VectorStoreDocumentRetriever.builder()
-                                .vectorStore(vectorStore)
-                                .filterExpression(filterExpression)
-                                .similarityThreshold(0.5)
-                                .topK(3)
-                                .build())
-                        .documentPostProcessors(
-                                TranslateResponsePostProcessor.builder()
-                                        .chatClientBuilder(chatClientBuilder)
-                                        .build()
-                        )
-                        .build())
+                .defaultAdvisors(memoryAdvisor, retrievalAdvisor)
                 .build();
-        val answer = chatClient.prompt()
+
+        log.atInfo().log("[LLM REQUEST] User question: %s", request.question());
+        log.atInfo().log("[LLM REQUEST] Document IDs: %s", documentIds);
+        log.atInfo().log("[LLM REQUEST] Filter: userId=%s, documentIds=%s", userId, documentIds);
+
+        val chatResponse = chatClient.prompt()
                 .user(request.question())
                 .advisors(a -> a.param(CONVERSATION_ID, compositeId))
                 .call()
-                .content();
+                .chatResponse();
 
-        // Save assistant response to chat memory
-        val assistantMessage = new AssistantMessage(answer);
-        chatMemory.add(compositeId, assistantMessage);
+        val answer = chatResponse.getResult().getOutput().getText();
 
+        log.atInfo().log("[LLM RESPONSE] Answer: %s", answer);
+        log.atInfo().log("[LLM RESPONSE] Metadata: %s", chatResponse.getMetadata());
         log.atInfo().log("Chat response generated for conversationId=%s", compositeId);
+
         return new ChatResponseDTO(answer, conversationId.toString(), Instant.now());
     }
 

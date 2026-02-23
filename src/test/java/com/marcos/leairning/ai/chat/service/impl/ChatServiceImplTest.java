@@ -1,4 +1,4 @@
-package com.marcos.leairning.ai.chat.service.ollama;
+package com.marcos.leairning.ai.chat.service.impl;
 
 import com.marcos.leairning.ai.chat.dto.ChatRequestDTO;
 import com.marcos.leairning.ai.chat.service.ConversationService;
@@ -7,6 +7,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
 import java.lang.reflect.Field;
@@ -15,14 +18,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-class ChatServiceOllamaImplTest {
+class ChatServiceImplTest {
 
     ChatMemory chatMemory;
     ConversationService conversationService;
     ChatClient.Builder chatClientBuilder;
     ChatClient chatClient;
     VectorStore vectorStore;
-    ChatServiceOllamaImpl chatService;
+    ChatServiceImpl chatService;
     Resource systemPromptTemplate;
 
     @BeforeEach
@@ -35,29 +38,36 @@ class ChatServiceOllamaImplTest {
         vectorStore = mock(VectorStore.class);
         systemPromptTemplate = mock(Resource.class);
 
-        // Setup ChatClient builder chain with proper return values
-        ChatClient.Builder clonedBuilder = mock(ChatClient.Builder.class);
+        // Setup ChatClient builder chain — clone() is called multiple times
+        // (once for RewriteQueryTransformer, once for the main client)
+        var clonedBuilder = mock(ChatClient.Builder.class);
         when(chatClientBuilder.clone()).thenReturn(clonedBuilder);
         when(clonedBuilder.defaultSystem(any(Resource.class))).thenReturn(clonedBuilder);
         when(clonedBuilder.defaultAdvisors(any(org.springframework.ai.chat.client.advisor.api.Advisor[].class))).thenReturn(clonedBuilder);
         when(clonedBuilder.build()).thenReturn(chatClient);
 
         // Setup request chain
-        ChatClient.ChatClientRequestSpec requestSpec = mock(ChatClient.ChatClientRequestSpec.class);
-        ChatClient.ChatClientRequestSpec userRequestSpec = mock(ChatClient.ChatClientRequestSpec.class);
-        ChatClient.ChatClientRequestSpec advisorRequestSpec = mock(ChatClient.ChatClientRequestSpec.class);
-        ChatClient.CallResponseSpec callResponseSpec = mock(ChatClient.CallResponseSpec.class);
+        var requestSpec = mock(ChatClient.ChatClientRequestSpec.class);
+        var userRequestSpec = mock(ChatClient.ChatClientRequestSpec.class);
+        var advisorRequestSpec = mock(ChatClient.ChatClientRequestSpec.class);
+        var callResponseSpec = mock(ChatClient.CallResponseSpec.class);
 
         when(chatClient.prompt()).thenReturn(requestSpec);
         when(requestSpec.user(any(String.class))).thenReturn(userRequestSpec);
         when(userRequestSpec.advisors(any(java.util.function.Consumer.class))).thenReturn(advisorRequestSpec);
         when(advisorRequestSpec.call()).thenReturn(callResponseSpec);
-        when(callResponseSpec.content()).thenReturn("Test response from AI");
 
-        chatService = new ChatServiceOllamaImpl(chatMemory, vectorStore, chatClientBuilder, conversationService);
-        // Use reflection to set the private field
+        // Mock chatResponse() chain — production uses chatResponse().getResult().getOutput().getText()
+        var chatResponse = mock(ChatResponse.class);
+        var generation = mock(Generation.class);
+        var assistantMessage = new AssistantMessage("Test response from AI");
+        when(callResponseSpec.chatResponse()).thenReturn(chatResponse);
+        when(chatResponse.getResult()).thenReturn(generation);
+        when(generation.getOutput()).thenReturn(assistantMessage);
+
+        chatService = new ChatServiceImpl(chatMemory, vectorStore, chatClientBuilder, conversationService);
         try {
-            Field field = ChatServiceOllamaImpl.class.getDeclaredField("systemPromptTemplate");
+            Field field = ChatServiceImpl.class.getDeclaredField("systemPromptTemplate");
             field.setAccessible(true);
             field.set(chatService, systemPromptTemplate);
         } catch (Exception e) {
@@ -76,7 +86,6 @@ class ChatServiceOllamaImplTest {
 
         chatService.askQuestion(request, userId, conversationId);
 
-        // Verify user message was saved to chat memory (at least once)
         verify(chatMemory, atLeastOnce()).add(eq(compositeId), any(Message.class));
     }
 
@@ -91,7 +100,6 @@ class ChatServiceOllamaImplTest {
 
         chatService.askQuestion(request, userId, conversationId);
 
-        // Verify both messages were saved (user + assistant)
         verify(chatMemory, times(2)).add(eq(compositeId), any(Message.class));
     }
 
