@@ -41,6 +41,8 @@ El backend de LeAIrning es un **monolito modular** construido con Spring Boot 4.
 
 Cada dominio de negocio está organizado en su propio paquete siguiendo una **arquitectura por capas** (Controller → Service → Repository), con DTOs mapeados por MapStruct y excepciones de dominio específicas.
 
+El front de la aplicación se encuentra en [LeAIrningFront](https://github.com/MarcosLM11/LeAIrning-Front).
+
 ### Funcionalidades principales
 
 | Funcionalidad | Descripción |
