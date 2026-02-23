@@ -59,7 +59,7 @@ public class QuizzService {
         - What happens when X occurs?
         - What is the definition of X?
         
-        You MUST respond with ONLY valid JSON format
+        You MUST respond with ONLY valid JSON format and in the following language: {language}.
         """;
 
     private final DocumentsService documentsService;
@@ -78,7 +78,7 @@ public class QuizzService {
         this.vectorStore = vectorStore;
     }
 
-    public GeneratedQuizz generateQuizz(UUID userId, UUID documentId, int numberOfQuestions, QuestionType difficulty) {
+    public GeneratedQuizz generateQuizz(UUID userId, UUID documentId, int numberOfQuestions, QuestionType difficulty, String language) {
         val context = retrieveDiverseContext(userId, documentId, numberOfQuestions);
         val chatClient = chatClientBuilder.clone().build();
         log.atInfo().log("Generating quiz: %d questions, difficulty=%s, documentId=%s",
@@ -86,7 +86,9 @@ public class QuizzService {
         val response = chatClient.prompt()
                 .system(s -> s.text(SYSTEM_PROMPT)
                         .param("numberOfQuestions", numberOfQuestions)
-                        .param("difficulty", difficulty.name()))
+                        .param("difficulty", difficulty.name())
+                        .param("language", language))
+
                 .user(context)
                 .call()
                 .entity(Quizz.class);

@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface ChatService {
 
-    ChatResponseDTO askQuestion(ChatRequestDTO request, UUID userId, UUID conversationId);
+    ChatResponseDTO askQuestion(ChatRequestDTO request, UUID userId, UUID conversationId, String language);
 
     List<ChatMessageDTO> getMessages(UUID userId, UUID conversationId);
 }

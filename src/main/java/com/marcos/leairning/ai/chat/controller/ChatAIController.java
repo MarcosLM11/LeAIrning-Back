@@ -27,11 +27,12 @@ public class ChatAIController {
     public ResponseEntity<ChatResponseDTO> ask(
             @CurrentUserId UUID userId,
             @RequestHeader(name = "X-Conversation-Id") UUID conversationId,
+            @RequestHeader(name = "Accept-Language") String language,
             @RequestBody @Valid ChatRequestDTO request) {
 
         log.atInfo().log("Chat request from userId=%s, conversationId=%s", userId, conversationId);
 
-        val response = service.askQuestion(request, userId, conversationId);
+        val response = service.askQuestion(request, userId, conversationId, language);
         return ResponseEntity.ok(response);
     }
 }

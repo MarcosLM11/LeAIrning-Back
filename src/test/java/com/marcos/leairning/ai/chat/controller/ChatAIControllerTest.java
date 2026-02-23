@@ -27,12 +27,13 @@ class ChatAIControllerTest {
     void ask_returnsOkWithResponse() {
         val userId = UUID.randomUUID();
         val conversationId = UUID.randomUUID();
+        val language = "es";
         val request = new ChatRequestDTO("What is AI?");
         val expected = new ChatResponseDTO("AI is...", conversationId.toString(), Instant.now());
-        when(service.askQuestion(request, userId, conversationId)).thenReturn(expected);
-        val response = controller.ask(userId, conversationId, request);
+        when(service.askQuestion(request, userId, conversationId, language)).thenReturn(expected);
+        val response = controller.ask(userId, conversationId, language, request);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expected, response.getBody());
-        verify(service).askQuestion(request, userId, conversationId);
+        verify(service).askQuestion(request, userId, conversationId, language);
     }
 }

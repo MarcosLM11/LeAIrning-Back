@@ -28,10 +28,11 @@ public class QuizzController {
             @CurrentUserId UUID userId,
             @PathVariable UUID documentId,
             @RequestParam(defaultValue = "5") int numberOfQuestions,
-            @RequestParam(defaultValue = "MEDIUM") QuestionType difficulty) {
-        log.atInfo().log("Quiz request from userId=%s, documentId=%s, questions=%d, difficulty=%s",
-                userId, documentId, numberOfQuestions, difficulty);
-        val quizz = quizzService.generateQuizz(userId, documentId, numberOfQuestions, difficulty);
+            @RequestParam(defaultValue = "MEDIUM") QuestionType difficulty,
+            @RequestParam(defaultValue = "es") String language) {
+        log.atInfo().log("Quiz request from userId=%s, documentId=%s, questions=%d, difficulty=%s, language=%s",
+                userId, documentId, numberOfQuestions, difficulty, language);
+        val quizz = quizzService.generateQuizz(userId, documentId, numberOfQuestions, difficulty, language);
         return ResponseEntity.ok(quizz);
     }
 

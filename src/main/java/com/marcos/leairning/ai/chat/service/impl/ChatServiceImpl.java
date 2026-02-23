@@ -44,7 +44,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ChatResponseDTO askQuestion(ChatRequestDTO request, UUID userId, UUID conversationId) {
+    public ChatResponseDTO askQuestion(ChatRequestDTO request, UUID userId, UUID conversationId, String language) {
         val compositeId = userId + "_" + conversationId;
         val documentIds = getDocuments(userId, conversationId);
         var feb = new FilterExpressionBuilder();
@@ -70,7 +70,7 @@ public class ChatServiceImpl implements ChatService {
 
         val memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         val chatClient = chatClientBuilder.clone()
-                .defaultSystem(systemPromptTemplate)
+                .defaultSystem(systemSpec -> systemSpec.text(systemPromptTemplate).param("language", language))
                 .defaultAdvisors(memoryAdvisor, retrievalAdvisor)
                 .build();
 

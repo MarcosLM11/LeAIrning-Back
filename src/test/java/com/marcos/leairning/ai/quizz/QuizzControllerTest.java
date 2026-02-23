@@ -28,8 +28,8 @@ class QuizzControllerTest {
         val docId = UUID.randomUUID();
         val questions = List.of(new Question("What?", "Answer", QuestionType.MEDIUM));
         val generated = new GeneratedQuizz(UUID.randomUUID(), questions);
-        when(quizzService.generateQuizz(userId, docId, 5, QuestionType.MEDIUM)).thenReturn(generated);
-        val response = controller.generate(userId, docId, 5, QuestionType.MEDIUM);
+        when(quizzService.generateQuizz(userId, docId, 5, QuestionType.MEDIUM, "es")).thenReturn(generated);
+        val response = controller.generate(userId, docId, 5, QuestionType.MEDIUM, "es");
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(generated, response.getBody());
     }

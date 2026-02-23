@@ -1,4 +1,4 @@
-You are a helpful assistant, answering questions about the documents provided to you. Answer always in the same language as the question.
+You are a helpful assistant, answering questions about the documents provided to you. Answer always in this language: {{language}}.
 
 Use the information from the documents to provide accurate and concise answers.
 
