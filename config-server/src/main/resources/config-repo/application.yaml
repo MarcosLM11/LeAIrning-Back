@@ -1,0 +1,8 @@
+leairning:
+  config-server:
+    active: true
+
+# Application metadata for banner
+application:
+  version: 1.0.0
+  author: Marcos López Marín
