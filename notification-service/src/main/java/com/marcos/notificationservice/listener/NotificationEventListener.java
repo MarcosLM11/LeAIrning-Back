@@ -18,7 +18,7 @@ public class NotificationEventListener {
     @KafkaListener(topics = "user-registered", groupId = "notification-service")
     public void onUserRegistered(UserRegisteredEvent event) {
         log.info("Received UserRegisteredEvent for {}", event.email());
-        emailService.sendVerificationEmail(event.email(), event.verificationToken());
+        emailService.sendVerificationEmail(event.email(), event.name(), event.verificationToken());
     }
 
     @KafkaListener(topics = "user-verified", groupId = "notification-service")

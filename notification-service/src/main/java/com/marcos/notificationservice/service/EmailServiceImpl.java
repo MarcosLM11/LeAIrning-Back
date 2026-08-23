@@ -25,10 +25,11 @@ public class EmailServiceImpl implements EmailService {
 
     @Async
     @Override
-    public void sendVerificationEmail(String to, String verificationToken) {
+    public void sendVerificationEmail(String to, String name, String verificationToken) {
         var verificationUrl = frontendUrl + "/auth/verify?token=" + verificationToken;
 
         var context = Map.<String, Object>of(
+                "name", name,
                 "verificationUrl", verificationUrl
         );
 

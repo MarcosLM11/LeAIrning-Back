@@ -92,6 +92,10 @@
             margin-bottom: 16px;
         }
 
+        .greeting-name {
+            color: #4f46e5;
+        }
+
         .intro-text {
             color: #6b7280;
             font-size: 16px;
@@ -309,7 +313,7 @@
 
             <!-- Contenido -->
             <div class="content">
-                <p class="greeting">Hola! 👋</p>
+                <p class="greeting">Hola <span class="greeting-name" th:text="${name}">Usuario</span>! 👋</p>
 
                 <p class="intro-text">
                     Gracias por registrarte en LeAIrning. Para completar la creacion de tu cuenta,
