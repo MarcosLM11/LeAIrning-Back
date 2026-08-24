@@ -1,7 +1,7 @@
 services:
   # Infrastructure
   postgres:
-    image: 'postgres:18-alpine3.23'
+    image: 'postgres:latest'
     container_name: learning-postgres
     restart: unless-stopped
     environment:
@@ -10,7 +10,7 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql
       - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
@@ -18,40 +18,40 @@ services:
       timeout: 5s
       retries: 5
 
-  qdrant:
-    image: 'qdrant/qdrant:dev'
-    container_name: learning-qdrant
-    ports:
-      - '6334:6334'
-      - '6333:6333'
-    volumes:
-      - qdrant-data:/qdrant/storage
+#  qdrant:
+#    image: 'qdrant/qdrant:dev'
+#    container_name: learning-qdrant
+#    ports:
+#      - '6334:6334'
+#      - '6333:6333'
+#    volumes:
+#      - qdrant-data:/qdrant/storage
 
-  minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
-    container_name: leairning-minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio-data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+#  minio:
+#    image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
+#    container_name: leairning-minio
+#    ports:
+#      - "9000:9000"
+#      - "9001:9001"
+#    environment:
+#      MINIO_ROOT_USER: minioadmin
+#      MINIO_ROOT_PASSWORD: minioadmin
+#    command: server /data --console-address ":9001"
+#    volumes:
+#      - minio-data:/data
+#    healthcheck:
+#      test: ["CMD", "mc", "ready", "local"]
+#      interval: 30s
+#      timeout: 20s
+#      retries: 3
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: leairning-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
+#  ollama:
+#    image: ollama/ollama:latest
+#    container_name: leairning-ollama
+#    ports:
+#      - "11434:11434"
+#    volumes:
+#      - ollama-data:/root/.ollama
 
   kafka:
     image: 'apache/kafka:latest'
@@ -114,7 +114,7 @@ services:
 
 volumes:
   postgres-data:
-  qdrant-data:
-  minio-data:
-  ollama-data:
+#  qdrant-data:
+#  minio-data:
+#  ollama-data:
   kafka-data:
