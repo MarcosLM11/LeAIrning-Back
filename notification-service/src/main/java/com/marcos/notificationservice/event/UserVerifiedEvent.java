@@ -1,4 +1,13 @@
 package com.marcos.notificationservice.event;
 
-public record UserVerifiedEvent(String email) {
+import java.time.Instant;
+import java.util.UUID;
+
+public record UserVerifiedEvent(
+        UUID eventId,
+        UUID userId,
+        String email,
+        String name,
+        Instant occurredAt
+) {
 }

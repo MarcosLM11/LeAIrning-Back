@@ -24,6 +24,6 @@ public class NotificationEventListener {
     @KafkaListener(topics = "user-verified", groupId = "notification-service")
     public void onUserVerified(UserVerifiedEvent event) {
         log.info("Received UserVerifiedEvent for {}", event.email());
-        emailService.sendWelcomeEmail(event.email(), "¡Bienvenido a LeAIrning!");
+        emailService.sendWelcomeEmail(event.email(), event.name(), "¡Bienvenido a LeAIrning!");
     }
 }

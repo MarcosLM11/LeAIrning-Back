@@ -55,10 +55,10 @@ public class EmailServiceImpl implements EmailService {
 
     @Async
     @Override
-    public void sendWelcomeEmail(String to, String subject) {
+    public void sendWelcomeEmail(String to, String name, String subject) {
 
         var context = Map.<String, Object>of(
-                "name", "Usuario",
+                "name", name,
                 "frontendUrl", frontendUrl
         );
 
