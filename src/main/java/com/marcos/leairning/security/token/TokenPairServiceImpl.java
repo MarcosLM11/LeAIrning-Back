@@ -1,41 +1,35 @@
 package com.marcos.leairning.security.token;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.flogger.Flogger;
-import lombok.val;
 import com.github.benmanes.caffeine.cache.Cache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
 import static java.util.Optional.ofNullable;
 import static java.util.UUID.randomUUID;
 
-@Flogger
 @Service
-@RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TokenPairServiceImpl implements TokenPairService {
 
-    Cache<String, TokenPair> cache;
+    private static final Logger log = LoggerFactory.getLogger(TokenPairServiceImpl.class);
+    private final Cache<String, TokenPair> cache;
+
+    public TokenPairServiceImpl(Cache<String, TokenPair> cache) {
+        this.cache = cache;
+    }
 
     @Override
     public String add(TokenPair tokenPair) {
-        val code = randomUUID().toString();
-
-        log.atFine().log("Creating token code: %s ", code);
-
+        var code = randomUUID().toString();
+        log.info("Creating token code: {} ", code);
         cache.put(code, tokenPair);
-
         return code;
     }
 
     @Override
     public Optional<TokenPair> find(String code) {
-        log.atFine().log("Fetching token code: %s", code);
-
-        val pair = cache.getIfPresent(code);
-
+        log.info("Fetching token code: {}", code);
+        var pair = cache.getIfPresent(code);
         return ofNullable(pair);
     }
 

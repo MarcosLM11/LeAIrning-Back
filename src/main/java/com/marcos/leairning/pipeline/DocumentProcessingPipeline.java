@@ -3,11 +3,8 @@ package com.marcos.leairning.pipeline;
 import com.marcos.leairning.documents.DocumentsRepository;
 import com.marcos.leairning.exception.DocumentReaderException;
 import com.marcos.leairning.exception.VectorStoreException;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.flogger.Flogger;
-import lombok.val;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TextSplitter;
@@ -32,14 +29,18 @@ import java.util.function.Function;
  * 4. splitter: Splits into chunks with TokenTextSplitter
  * 5. vectorStoreConsumer: Stores in Qdrant with embeddings
  */
-@Flogger
 @Component
-@RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DocumentProcessingPipeline {
 
-    PipelineProperties properties;
-    DocumentsRepository repository;
+    private static final Logger log = LoggerFactory.getLogger(DocumentProcessingPipeline.class);
+
+    private final PipelineProperties properties;
+    private final DocumentsRepository repository;
+
+    public DocumentProcessingPipeline(PipelineProperties properties, DocumentsRepository repository) {
+        this.properties = properties;
+        this.repository = repository;
+    }
 
     /**
      * Step 1: Enriches DocumentContext with full document entity from database.
@@ -50,12 +51,11 @@ public class DocumentProcessingPipeline {
     @Bean
     public Function<Flux<DocumentContext>, Flux<DocumentContext>> metadataEnricher() {
         return contextFlux -> contextFlux
-                .doOnNext(ctx -> log.atInfo().log("Enriching metadata for documentId=%s", ctx.documentId()))
+                .doOnNext(ctx -> log.info("Enriching metadata for documentId={}", ctx.documentId()))
                 .map(ctx -> {
-                    val document = repository.findById(ctx.documentId())
+                    var document = repository.findById(ctx.documentId())
                             .orElseThrow(() -> new IllegalStateException("Document not found: " + ctx.documentId()));
-                    log.atInfo().log("Loaded document metadata: id=%s, userId=%s, filename=%s",
-                            document.getId(), document.getUserId(), document.getFileName());
+                    log.info("Loaded document metadata: id={}, userId={}, filename={}", document.getId(), document.getUserId(), document.getFileName());
                     return ctx.withDocument(document);
                 })
                 .subscribeOn(Schedulers.boundedElastic());
@@ -69,24 +69,24 @@ public class DocumentProcessingPipeline {
     @Bean
     public Function<Flux<DocumentContext>, Flux<Document>> documentReader() {
         return contextFlux -> contextFlux
-                .doOnNext(ctx -> log.atInfo().log("Reading document (%d bytes)", ctx.fileBytes().length))
+                .doOnNext(ctx -> log.info("Reading document  {} bytes)", ctx.fileBytes().length))
                 .flatMapIterable(ctx -> {
                     try {
                         var documents = new TikaDocumentReader(new ByteArrayResource(ctx.fileBytes())).get();
 
                         if (documents.isEmpty()) {
-                            log.atWarning().log("TikaDocumentReader returned empty document list");
+                            log.warn("TikaDocumentReader returned empty document list");
                             throw new DocumentReaderException("Failed to extract text from document");
                         }
 
                         documents.forEach(doc -> addMetadata(doc, ctx));
 
-                        log.atInfo().log("Extracted %d documents with metadata: userId=%s, documentId=%s", documents.size(), ctx.document().getUserId(), ctx.documentId());
+                        log.info("Extracted {} documents with metadata: userId={}, documentId={}", documents.size(), ctx.document().getUserId(), ctx.documentId());
                         return documents;
                     } catch (DocumentReaderException e) {
                         throw e;
                     } catch (Exception e) {
-                        log.atWarning().withCause(e).log("Error reading document with Tika");
+                        log.warn("Error reading document with Tika");
                         throw new DocumentReaderException("Document reading failed", e);
                     }
                 })
@@ -129,10 +129,10 @@ public class DocumentProcessingPipeline {
      */
     public Function<Flux<Document>, Flux<List<Document>>> splitter(TextSplitter textSplitter) {
         return documentFlux -> documentFlux
-                .doOnNext(doc -> log.atInfo().log("Splitting document into chunks (chunk size: %d)", properties.getChunkSize()))
+                .doOnNext(_ -> log.info("Splitting document into chunks (chunk size: {})", properties.getChunkSize()))
                 .map(incoming -> {
                     List<Document> chunks = textSplitter.apply(List.of(incoming));
-                    log.atInfo().log("Document split into %d chunks with metadata preserved", chunks.size());
+                    log.info("Document split into {} chunks with metadata preserved", chunks.size());
                     return chunks;
                 })
                 .subscribeOn(Schedulers.boundedElastic());
@@ -151,21 +151,21 @@ public class DocumentProcessingPipeline {
                 .flatMap(documents -> Mono.fromCallable(() -> {
                     if (!documents.isEmpty()) {
                         var docCount = documents.size();
-                        log.atInfo().log("Writing %d document chunks to vector store", docCount);
+                        log.info("Writing {} document chunks to vector store", docCount);
                         try {
                             vectorStore.accept(documents);
-                            log.atInfo().log("%d document chunks written to vector store successfully", docCount);
+                            log.info("{} document chunks written to vector store successfully", docCount);
                         } catch (Exception e) {
-                            log.atWarning().withCause(e).log("Error writing to vector store");
+                            log.warn("Error writing to vector store");
                             throw new VectorStoreException("Vector store write failed", e);
                         }
                     } else {
-                        log.atWarning().log("Empty document list, skipping vector store write");
+                        log.warn("Empty document list, skipping vector store write");
                     }
                     return documents;
                 }).subscribeOn(Schedulers.boundedElastic()))
-                .doOnError(error -> log.atWarning().withCause(error).log("Pipeline error occurred"))
-                .doOnComplete(() -> log.atInfo().log("Pipeline completed successfully"))
+                .doOnError(_ -> log.warn("Pipeline error occurred"))
+                .doOnComplete(() -> log.info("Pipeline completed successfully"))
                 .subscribe();
     }
 

@@ -1,10 +1,10 @@
 package com.marcos.leairning.pipeline;
 
-import lombok.Data;
+import lombok.Getter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-@Data
+@Getter
 @Validated
 @ConfigurationProperties(prefix = PipelineProperties.PREFIX)
 public class PipelineProperties {

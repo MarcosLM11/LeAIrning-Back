@@ -1,22 +1,22 @@
 package com.marcos.leairning.security.auth;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class LoginAttemptServiceImpl implements LoginAttemptService {
 
-    Cache<String, Integer> loginAttemptsCache;
-    LoginLockoutProperties lockoutProperties;
+    private final Cache<String, Integer> loginAttemptsCache;
+    private final LoginLockoutProperties lockoutProperties;
+
+    public LoginAttemptServiceImpl(Cache<String, Integer> loginAttemptsCache,  LoginLockoutProperties lockoutProperties) {
+        this.loginAttemptsCache = loginAttemptsCache;
+        this.lockoutProperties = lockoutProperties;
+    }
 
     @Override
     public void recordFailedAttempt(String email) {
-        var attempts = loginAttemptsCache.get(email, k -> 0);
+        var attempts = loginAttemptsCache.get(email, _ -> 0);
         loginAttemptsCache.put(email, attempts + 1);
     }
 

@@ -8,36 +8,28 @@ import com.marcos.leairning.users.UsersService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AccessLevel;
-import lombok.experimental.FieldDefaults;
-import lombok.val;
-import lombok.extern.flogger.Flogger;
+import org.jspecify.annotations.NonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
-
 import java.io.IOException;
 
-/**
- * Handles successful OAuth2 authentication from multiple providers (Google, GitHub).
- * Supports provider-agnostic user creation and retrieval.
- */
-@Flogger
 @Component
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class Oauth2SuccessHandler extends AuthCodeAuthenticationSuccessHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(Oauth2SuccessHandler.class);
     private static final String EMAIL = "email";
     private static final String LOGIN = "login";
 
-    UsersService usersService;
-    UsersMapper usersMapper;
-    GitHubEmailService gitHubEmailService;
-    OAuth2AuthorizedClientService authorizedClientService;
+    private final UsersService usersService;
+    private final UsersMapper usersMapper;
+    private final GitHubEmailService gitHubEmailService;
+    private final OAuth2AuthorizedClientService authorizedClientService;
 
     public Oauth2SuccessHandler(
             JwtService jwtService,
@@ -56,8 +48,10 @@ public class Oauth2SuccessHandler extends AuthCodeAuthenticationSuccessHandler {
     }
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, 
-                                        Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull Authentication authentication) throws IOException, ServletException {
         if (authentication instanceof OAuth2AuthenticationToken oauthToken) {
             handleOauth2Authentication(request, response, oauthToken);
             return;
@@ -67,22 +61,22 @@ public class Oauth2SuccessHandler extends AuthCodeAuthenticationSuccessHandler {
 
     private void handleOauth2Authentication(HttpServletRequest request, HttpServletResponse response, 
                                             OAuth2AuthenticationToken oauthToken) throws IOException {
-        val principal = oauthToken.getPrincipal();
-        val provider = oauthToken.getAuthorizedClientRegistrationId();
-        val email = extractEmail(oauthToken, principal, provider);
+        var principal = oauthToken.getPrincipal();
+        var provider = oauthToken.getAuthorizedClientRegistrationId();
+        var email = extractEmail(oauthToken, principal, provider);
         
-        log.atInfo().log("Processing OAuth2 login for provider: %s, email: %s", provider, email);
+        log.info("Processing OAuth2 login for provider: {}, email: {}", provider, email);
         
         // Search by email + provider (allows same email across different providers)
-        val user = usersService.getByEmailAndProvider(email, provider)
+        var user = usersService.getByEmailAndProvider(email, provider)
                 .orElseGet(() -> {
-                    log.atInfo().log("Creating new OAuth2 user for provider: %s", provider);
-                    val dto = usersMapper.toOauth2CreateDTO(principal, provider);
+                    log.info("Creating new OAuth2 user for provider: {}", provider);
+                    var dto = usersMapper.toOauth2CreateDTO(principal, provider);
                     return usersService.saveOauth2User(dto);
                 });
                 
-        val tokenPair = generateTokenPair(user);
-        val code = storeAndGetAuthCode(tokenPair);
+        var tokenPair = generateTokenPair(user);
+        var code = storeAndGetAuthCode(tokenPair);
         sendAuthCodeRedirect(request, response, code);
     }
     
@@ -97,8 +91,7 @@ public class Oauth2SuccessHandler extends AuthCodeAuthenticationSuccessHandler {
         if ("github".equalsIgnoreCase(provider)) {
             return extractGitHubEmail(oauthToken, principal);
         }
-        // Google and others: email comes in the attributes
-        return (String) principal.getAttribute(EMAIL);
+        return principal.getAttribute(EMAIL);
     }
     
     /**
@@ -108,34 +101,32 @@ public class Oauth2SuccessHandler extends AuthCodeAuthenticationSuccessHandler {
      * Falls back to username@users.noreply.github.com if no email available.
      */
     private String extractGitHubEmail(OAuth2AuthenticationToken oauthToken, OAuth2User principal) {
-        // Try to get email from attributes first (if it's public)
-        String email = (String) principal.getAttribute(EMAIL);
+        String email = principal.getAttribute(EMAIL);
         if (email != null && !email.isBlank()) {
-            log.atFine().log("Using public email from GitHub attributes");
+            log.info("Using public email from GitHub attributes");
             return email;
         }
         
         // If not public, get the access token and call /user/emails
-        log.atFine().log("Public email not available, fetching from GitHub API");
-        val clientRegistrationId = oauthToken.getAuthorizedClientRegistrationId();
-        val principalName = oauthToken.getName();
-        val authorizedClient = authorizedClientService.loadAuthorizedClient(
+        log.info("Public email not available, fetching from GitHub API");
+        var clientRegistrationId = oauthToken.getAuthorizedClientRegistrationId();
+        var principalName = oauthToken.getName();
+        var authorizedClient = authorizedClientService.loadAuthorizedClient(
                 clientRegistrationId, principalName);
             
         if (authorizedClient == null) {
-            log.atSevere().log("Authorized client not found for GitHub");
+            log.warn("Authorized client not found for GitHub");
             throw new IllegalStateException("Authorized client not found");
         }
         
-        val accessToken = authorizedClient.getAccessToken().getTokenValue();
+        var accessToken = authorizedClient.getAccessToken().getTokenValue();
         String fetchedEmail = gitHubEmailService.getPrimaryEmail(accessToken);
         
-        // If we couldn't fetch email (403 - permission denied), use fallback
         if (fetchedEmail == null) {
-            String username = (String) principal.getAttribute(LOGIN);
+            String username = principal.getAttribute(LOGIN);
             if (username != null && !username.isBlank()) {
                 fetchedEmail = username + "@users.noreply.github.com";
-                log.atWarning().log("Email permission not granted. Using fallback email: %s", fetchedEmail);
+                log.warn("Email permission not granted. Using fallback email: {}", fetchedEmail);
             } else {
                 throw new IllegalStateException("Cannot extract email or username from GitHub account");
             }

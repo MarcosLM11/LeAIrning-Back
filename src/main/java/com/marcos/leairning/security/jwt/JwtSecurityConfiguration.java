@@ -2,11 +2,7 @@ package com.marcos.leairning.security.jwt;
 
 import com.marcos.leairning.security.AbstractSecurityConfiguration;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.experimental.FieldDefaults;
-import lombok.val;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,8 +23,6 @@ import java.util.stream.Stream;
 import static org.springframework.security.oauth2.jwt.NimbusJwtDecoder.withSecretKey;
 
 @Configuration(proxyBeanMethods = false)
-@RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @EnableConfigurationProperties({JwtProperties.class, JwtSecretProperties.class})
 public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
 
@@ -66,10 +60,10 @@ public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
 
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
-        val converter = new JwtAuthenticationConverter();
+        var converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            val roles = jwt.getClaimAsStringList("roles");
-            val scope = jwt.getClaimAsString("scope");
+            var roles = jwt.getClaimAsStringList("roles");
+            var scope = jwt.getClaimAsString("scope");
 
             Stream<String> roleStream = roles != null ? roles.stream().map(role -> "ROLE_" + role) : Stream.empty();
             Stream<String> scopeStream = scope != null ? Stream.of("SCOPE_" + scope) : Stream.empty();
@@ -83,21 +77,21 @@ public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
 
     @Bean
     JwtEncoder jwtEncoder() {
-        val secret = properties.getValue();
-        val bytes = secret.getBytes();
-        val immutableSecret = new ImmutableSecret<>(bytes);
+        var secret = properties.getValue();
+        var bytes = secret.getBytes();
+        var immutableSecret = new ImmutableSecret<>(bytes);
 
         return new NimbusJwtEncoder(immutableSecret);
     }
 
     @Bean
     JwtDecoder jwtDecoder() {
-        val secret = properties.getValue();
-        val bytes = secret.getBytes();
-        val algorithm = properties.getAlgorithm();
-        val originalKey = new SecretKeySpec(bytes, 0, bytes.length, algorithm);
-        val decoder = withSecretKey(originalKey).macAlgorithm(MacAlgorithm.valueOf(algorithm)).build();
-        val validator = new DelegatingOAuth2TokenValidator<>(
+        var secret = properties.getValue();
+        var bytes = secret.getBytes();
+        var algorithm = properties.getAlgorithm();
+        var originalKey = new SecretKeySpec(bytes, 0, bytes.length, algorithm);
+        var decoder = withSecretKey(originalKey).macAlgorithm(MacAlgorithm.valueOf(algorithm)).build();
+        var validator = new DelegatingOAuth2TokenValidator<>(
                 new JwtTimestampValidator(),
                 new RevokedTokenValidator(revokedTokenService));
         decoder.setJwtValidator(validator);

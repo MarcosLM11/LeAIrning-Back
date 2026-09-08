@@ -7,5 +7,4 @@ public record TokenPair(
         String accessToken,
         @JsonProperty("refresh_token")
         String refreshToken
-) {
-}
+) {}

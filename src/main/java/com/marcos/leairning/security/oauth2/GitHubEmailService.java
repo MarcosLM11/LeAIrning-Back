@@ -1,14 +1,14 @@
 package com.marcos.leairning.security.oauth2;
 
 import io.netty.channel.ChannelOption;
-import lombok.extern.flogger.Flogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.netty.http.client.HttpClient;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -18,9 +18,9 @@ import java.util.Map;
  * GitHub's /user endpoint may not return the email if it's not public,
  * so we need to call /user/emails with the access token.
  */
-@Flogger
 @Service
 public class GitHubEmailService {
+    private static final Logger log = LoggerFactory.getLogger(GitHubEmailService.class);
 
     private final WebClient webClient;
 
@@ -35,17 +35,8 @@ public class GitHubEmailService {
                 .build();
     }
 
-    /**
-     * Fetches the primary verified email from GitHub.
-     * If no primary email is found, returns the first verified email.
-     * If permission denied (403), returns null so caller can handle fallback.
-     * 
-     * @param accessToken GitHub OAuth2 access token
-     * @return Primary verified email address, or null if permission denied
-     * @throws IllegalStateException if no verified email is found (and permission was granted)
-     */
     public String getPrimaryEmail(String accessToken) {
-        log.atFine().log("Fetching primary email from GitHub");
+        log.info("Fetching primary email from GitHub");
         
         try {
             List<Map<String, Object>> emails = webClient.get()
@@ -57,7 +48,7 @@ public class GitHubEmailService {
                     .block();
 
             if (emails == null || emails.isEmpty()) {
-                log.atWarning().log("No emails found for GitHub user");
+                log.warn("No emails found for GitHub user");
                 throw new IllegalStateException("No emails found for GitHub user");
             }
 
@@ -70,7 +61,7 @@ public class GitHubEmailService {
                     .orElse(null);
 
             if (primaryEmail != null) {
-                log.atFine().log("Found primary verified email from GitHub");
+                log.info("Found primary verified email from GitHub");
                 return primaryEmail;
             }
 
@@ -82,21 +73,21 @@ public class GitHubEmailService {
                     .orElse(null);
 
             if (firstVerified != null) {
-                log.atFine().log("Found verified email from GitHub (not primary)");
+                log.info("Found verified email from GitHub (not primary)");
                 return firstVerified;
             }
 
-            log.atWarning().log("No verified email found for GitHub user");
+            log.warn("No verified email found for GitHub user");
             throw new IllegalStateException("No verified email found for GitHub user. Please verify your email on GitHub.");
 
         } catch (WebClientResponseException.Forbidden e) {
             // 403 Forbidden - user didn't grant user:email scope
-            log.atWarning().log("Permission denied (403) when fetching GitHub emails. " +
+            log.warn("Permission denied (403) when fetching GitHub emails. " +
                     "The user may need to re-authorize the app with email scope. " +
                     "Falling back to alternative email generation.");
             return null;
         } catch (Exception e) {
-            log.atSevere().withCause(e).log("Failed to fetch email from GitHub");
+            log.warn("Failed to fetch email from GitHub");
             throw new RuntimeException("Failed to fetch GitHub email: " + e.getMessage(), e);
         }
     }

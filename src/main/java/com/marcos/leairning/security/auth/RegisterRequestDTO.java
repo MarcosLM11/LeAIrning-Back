@@ -10,5 +10,4 @@ public record RegisterRequestDTO(
         String pictureUrl,
         @NotBlank String role,
         @NotBlank @Size(min = 12) String password
-) {
-}
+) {}

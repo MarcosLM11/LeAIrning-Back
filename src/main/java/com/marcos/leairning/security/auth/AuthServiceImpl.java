@@ -15,32 +15,31 @@ import com.marcos.leairning.security.token.TokenPairService;
 import com.marcos.leairning.users.UserResponseDTO;
 import com.marcos.leairning.users.UsersMapper;
 import com.marcos.leairning.users.UsersService;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.flogger.Flogger;
 import lombok.val;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
-@Flogger
 @Service
-@RequiredArgsConstructor
 @RateLimiting(name = "strict")
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@RequiredArgsConstructor()
 public class AuthServiceImpl implements AuthService {
 
-    UsersService usersService;
-    UsersMapper mapper;
-    PasswordEncoder passwordEncoder;
-    JwtService jwtService;
-    RevokedTokenService revokedTokenService;
-    TokenPairService tokenPairService;
-    EmailService emailService;
-    Cache<String, String> verificationTokenCache;
-    LoginAttemptService loginAttemptService;
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
+
+    private final UsersService usersService;
+    private final UsersMapper mapper;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final RevokedTokenService revokedTokenService;
+    private final TokenPairService tokenPairService;
+    private final EmailService emailService;
+    private final Cache<String, String> verificationTokenCache;
+    private final LoginAttemptService loginAttemptService;
 
     @Override
     public String login(LoginRequestDTO request) {
@@ -68,10 +67,8 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void register(RegisterRequestDTO request) {
         usersService.save(request);
-
         val verificationToken = UUID.randomUUID().toString();
         verificationTokenCache.put(verificationToken, request.email());
-
         emailService.sendVerificationEmail(request.email(), verificationToken);
     }
 
@@ -93,7 +90,7 @@ public class AuthServiceImpl implements AuthService {
         try {
             emailService.sendWelcomeEmail(email, "Welcome to LeAIrning!");
         } catch (Exception e) {
-            log.atWarning().withCause(e).log("Failed to send welcome email to %s", email);
+            log.warn("Failed to send welcome email to {}", email);
         }
 
         return authCode;
@@ -102,7 +99,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout(UUID userId) {
         revokedTokenService.revokeAllForUser(userId);
-        log.atInfo().log("All tokens revoked for user: %s", userId);
+        log.info("All tokens revoked for user: {}", userId);
     }
 
     private String generateAuthCode(UserResponseDTO user) {

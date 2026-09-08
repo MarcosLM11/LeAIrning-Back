@@ -8,5 +8,4 @@ public record Oauth2UserCreateDTO(
         @NotBlank String name,
         String pictureUrl,
         @NotBlank String provider
-) {
-}
+) {}

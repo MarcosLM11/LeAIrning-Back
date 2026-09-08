@@ -30,12 +30,11 @@ class AuthServiceImplTest {
     RevokedTokenService revokedTokenService;
     TokenPairService tokenPairService;
     EmailService emailService;
-    Cache<String, String> verificationTokenCache;
+    Cache verificationTokenCache;
     LoginAttemptService loginAttemptService;
     AuthServiceImpl authService;
 
     @BeforeEach
-    @SuppressWarnings("unchecked")
     void setUp() {
         usersService = mock(UsersService.class);
         mapper = mock(UsersMapper.class);
