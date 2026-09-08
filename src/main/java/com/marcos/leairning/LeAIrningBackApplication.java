@@ -1,7 +1,5 @@
 package com.marcos.leairning;
 
-import com.marcos.leairning.util.logging.LoggingUtils;
-import lombok.extern.flogger.Flogger;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,17 +12,12 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.web.config.EnableSpringDataWebSupport;
 import static org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO;
 
-@Flogger
 @EnableAsync
 @EnableJpaAuditing
 @SpringBootApplication
 @ConfigurationPropertiesScan
 @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO)
 public class LeAIrningBackApplication {
-
-    static {
-        LoggingUtils.setupFlogger();
-    }
 
     static void main(String[] args) {
         SpringApplication.run(LeAIrningBackApplication.class, args);
@@ -37,8 +30,6 @@ public class LeAIrningBackApplication {
         return _ -> {
             if (composedFunction != null) {
                 composedFunction.run();
-            } else {
-                log.atWarning().log("No composed function found in the catalog");
             }
         };
     }

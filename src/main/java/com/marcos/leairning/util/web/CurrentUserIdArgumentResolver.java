@@ -1,6 +1,6 @@
 package com.marcos.leairning.util.web;
 
-import lombok.val;
+import org.jspecify.annotations.NonNull;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -19,17 +19,16 @@ public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResol
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        return parameter.hasParameterAnnotation(CurrentUserId.class)
-                && Objects.equals(parameter.getParameterType(), UUID.class);
+        return parameter.hasParameterAnnotation(CurrentUserId.class) && Objects.equals(parameter.getParameterType(), UUID.class);
     }
 
     @Override
-    public UUID resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
-        val authentication = SecurityContextHolder.getContext().getAuthentication();
+    public UUID resolveArgument(@NonNull MethodParameter parameter, ModelAndViewContainer mavContainer, @NonNull NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
             return null;
         }
-        val principal = authentication.getPrincipal();
+        var principal = authentication.getPrincipal();
         if (principal instanceof Jwt jwt) {
             return doResolve(jwt);
         }
@@ -37,7 +36,7 @@ public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResol
     }
 
     private UUID doResolve(Jwt jwt) {
-        val sub = jwt.getClaimAsString("sub");
+        var sub = jwt.getClaimAsString("sub");
         if (isBlank(sub)) {
             return null;
         }

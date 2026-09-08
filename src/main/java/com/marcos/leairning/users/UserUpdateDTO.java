@@ -6,5 +6,4 @@ import jakarta.validation.constraints.Size;
 public record UserUpdateDTO(
         @Email String email,
         @Size(min = 12) String password
-) {
-}
+) {}

@@ -2,39 +2,36 @@ package com.marcos.leairning.email;
 
 import com.marcos.leairning.security.auth.AuthProperties;
 import com.marcos.leairning.util.template.TemplateService;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.flogger.Flogger;
-import lombok.val;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import java.util.Map;
 
-@Flogger
 @Service
-@RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EmailServiceImpl implements EmailService {
 
-    JavaMailSender mailSender;
-    AuthProperties properties;
-    TemplateService templateService;
+    private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
 
+    private final JavaMailSender mailSender;
+    private final AuthProperties properties;
+    private final TemplateService templateService;
+
+    public EmailServiceImpl(JavaMailSender mailSender, AuthProperties properties, TemplateService templateService) {
+        this.mailSender = mailSender;
+        this.properties = properties;
+        this.templateService = templateService;
+    }
 
     @Async
     @Override
     public void sendVerificationEmail(String to, String verificationToken) {
-        val verificationUrl = properties.getFrontendUrl() + "/auth/verify?token=" + verificationToken;
-
-        var context = Map.<String, Object>of(
-                "verificationUrl", verificationUrl
-        );
-
-        val htmlContent = templateService.render("verification-email", context);
-        val textContent = templateService.renderText("verification-email", context);
+        var verificationUrl = properties.getFrontendUrl() + "/auth/verify?token=" + verificationToken;
+        var context = Map.<String, Object>of("verificationUrl", verificationUrl);
+        var htmlContent = templateService.render("verification-email", context);
+        var textContent = templateService.renderText("verification-email", context);
 
         try {
             var message = mailSender.createMimeMessage();
@@ -44,11 +41,11 @@ public class EmailServiceImpl implements EmailService {
             helper.setTo(to);
             helper.setSubject("Verifica tu cuenta - LeAIrning");
             helper.setText(textContent, htmlContent);
-
             mailSender.send(message);
-            log.atInfo().log("Verification email sent to {}", to);
+            log.info("Verification email sent to {}", to);
+
         } catch (Exception e) {
-            log.atSevere().withCause(e).log("Failed to send verification email to %s", to);
+            log.error("Failed to send verification email to {}", to);
         }
     }
 
@@ -60,9 +57,8 @@ public class EmailServiceImpl implements EmailService {
                 "name", "Usuario",
                 "frontendUrl", properties.getFrontendUrl()
         );
-
-        val htmlContent = templateService.render("welcome-email", context);
-        val textContent = templateService.renderText("welcome-email", context);
+        var htmlContent = templateService.render("welcome-email", context);
+        var textContent = templateService.renderText("welcome-email", context);
 
         try {
             var message = mailSender.createMimeMessage();
@@ -72,12 +68,11 @@ public class EmailServiceImpl implements EmailService {
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(textContent, htmlContent);
-
             mailSender.send(message);
-            log.atInfo().log("Welcome email sent to {}", to);
+            log.info("Welcome email sent to {}", to);
 
         } catch (Exception e) {
-            log.atSevere().withCause(e).log("Failed to send welcome email to %s", to);
+            log.error("Failed to send welcome email to {}", to);
         }
     }
 }

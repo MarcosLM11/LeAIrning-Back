@@ -10,23 +10,15 @@ import org.mapstruct.ReportingPolicy;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-@Mapper(
-        componentModel = "spring",
-        unmappedTargetPolicy = ReportingPolicy.IGNORE
-)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UsersMapper {
 
     @Mapping(target = "provider", constant = "local")
     User toUser(RegisterRequestDTO dto);
 
     User toUser(Oauth2UserCreateDTO dto);
-
     UserResponseDTO toResponse(User user);
 
-    /**
-     * Creates Oauth2UserCreateDTO based on the provider type (google or github).
-     * This method delegates to the appropriate provider-specific mapping method.
-     */
     default Oauth2UserCreateDTO toOauth2CreateDTO(OAuth2User oAuth2User, String provider) {
         return switch (provider.toLowerCase()) {
             case "google" -> toGoogleCreateDTO(oAuth2User);

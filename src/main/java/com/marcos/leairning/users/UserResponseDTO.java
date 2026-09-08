@@ -12,6 +12,4 @@ public record UserResponseDTO(
         String role,
         Boolean verified,
         String provider
-) {
-
-}
+) {}

@@ -1,35 +1,42 @@
 package com.marcos.leairning.minio;
 
 import com.marcos.leairning.exception.StorageOperationException;
-import io.minio.*;
+
+import io.minio.ListObjectsArgs;
+import io.minio.MinioClient;
+import io.minio.CopyObjectArgs;
+import io.minio.GetObjectArgs;
+import io.minio.CopySource;
+import io.minio.Result;
+import io.minio.RemoveObjectArgs;
 import io.minio.messages.Item;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.flogger.Flogger;
-import lombok.val;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.StreamSupport;
 
-@Flogger
 @Service
-@RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class MinioProcessingPipelineService {
 
+    private static final Logger log = LoggerFactory.getLogger(MinioProcessingPipelineService.class);
     private static final String PENDING_PREFIX = "pending/";
     private static final String PROCESSED_PREFIX = "processed/";
     private static final String FAILED_PREFIX = "failed/";
 
-    MinioClient client;
-    MinioProperties properties;
+    private final MinioClient client;
+    private final MinioProperties properties;
 
-    public String copyToProcessing(String objectPath, UUID documentId) {
-        val filename = objectPath.substring(objectPath.lastIndexOf('/') + 1);
-        val processingPath = PENDING_PREFIX + documentId + "_" + filename;
-        log.atFine().log("Copying file to processing: %s -> %s", objectPath, processingPath);
+    public MinioProcessingPipelineService(MinioClient client, MinioProperties properties) {
+        this.client = client;
+        this.properties = properties;
+    }
+
+    public void copyToProcessing(String objectPath, UUID documentId) {
+        var filename = objectPath.substring(objectPath.lastIndexOf('/') + 1);
+        var processingPath = PENDING_PREFIX + documentId + "_" + filename;
+        log.info("Copying file to processing: {} -> {}", objectPath, processingPath);
         
         try {
             client.copyObject(CopyObjectArgs.builder()
@@ -40,9 +47,7 @@ public class MinioProcessingPipelineService {
                             .object(objectPath)
                             .build())
                     .build());
-            log.atFine().log("File copied successfully to: %s", processingPath);
-        
-            return processingPath;
+            log.info("File copied successfully to: {}", processingPath);
         
         } catch (Exception e) {
             throw new StorageOperationException("copy file to processing bucket", e);
@@ -50,20 +55,20 @@ public class MinioProcessingPipelineService {
     }
 
     public List<String> listPendingFiles() {
-        log.atFine().log("Listing pending files");
+        log.info("Listing pending files");
         
         try {
-            val results = client.listObjects(ListObjectsArgs.builder()
+            var results = client.listObjects(ListObjectsArgs.builder()
                     .bucket(properties.getProcessingBucket())
                     .prefix(PENDING_PREFIX)
                     .build());
             
-            val pendingFiles = StreamSupport.stream(results.spliterator(), false)
+            var pendingFiles = StreamSupport.stream(results.spliterator(), false)
                     .map(this::getItemSafely)
                     .filter(item -> !item.isDir())
                     .map(Item::objectName)
                     .toList();
-            log.atFine().log("Found %d pending files", pendingFiles.size());
+            log.info("Found {} pending files", pendingFiles.size());
             
             return pendingFiles;
             
@@ -83,9 +88,9 @@ public class MinioProcessingPipelineService {
     }
 
     public byte[] loadFromProcessing(String processingPath) {
-        log.atFine().log("Loading file from processing: %s", processingPath);
+        log.info("Loading file from processing: {}", processingPath);
         
-        try (val stream = client.getObject(GetObjectArgs.builder()
+        try (var stream = client.getObject(GetObjectArgs.builder()
                 .bucket(properties.getProcessingBucket())
                 .object(processingPath)
                 .build())) {
@@ -98,9 +103,9 @@ public class MinioProcessingPipelineService {
     }
 
     public void markProcessed(String processingPath, boolean success) {
-        val filename = processingPath.substring(PENDING_PREFIX.length());
-        val targetPath = (success ? PROCESSED_PREFIX : FAILED_PREFIX) + filename;
-        log.atInfo().log("Marking file as %s: %s -> %s", success ? "processed" : "failed", processingPath, targetPath);
+        var filename = processingPath.substring(PENDING_PREFIX.length());
+        var targetPath = (success ? PROCESSED_PREFIX : FAILED_PREFIX) + filename;
+        log.atInfo().log("Marking file as {}: {} -> {}", success ? "processed" : "failed", processingPath, targetPath);
         
         try {
             client.copyObject(CopyObjectArgs.builder()
@@ -116,7 +121,7 @@ public class MinioProcessingPipelineService {
                     .bucket(properties.getProcessingBucket())
                     .object(processingPath)
                     .build());
-            log.atInfo().log("File marked as %s successfully", success ? "processed" : "failed");
+            log.atInfo().log("File marked as {} successfully", success ? "processed" : "failed");
             
         } catch (Exception e) {
             throw new StorageOperationException("mark file as processed", e);

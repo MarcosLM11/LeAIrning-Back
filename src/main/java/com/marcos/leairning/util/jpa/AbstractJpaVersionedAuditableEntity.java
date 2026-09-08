@@ -3,12 +3,16 @@ package com.marcos.leairning.util.jpa;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Version;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
-@Data
+@Getter
+@Setter
 @MappedSuperclass
-@EqualsAndHashCode(callSuper = false)
+@AllArgsConstructor
+@NoArgsConstructor
 public class AbstractJpaVersionedAuditableEntity extends AbstractJpaAuditableEntity {
 
     @Version

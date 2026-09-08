@@ -4,23 +4,21 @@ import com.marcos.leairning.exception.StorageBucketInitializationException;
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.val;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class MinioConfig {
 
-    MinioProperties properties;
+    private final MinioProperties properties;
+
+    public MinioConfig(MinioProperties properties) {
+        this.properties = properties;
+    }
 
     @Bean
     public MinioClient minioClient() {
-        val client = MinioClient.builder()
+        var client = MinioClient.builder()
                 .endpoint(properties.getEndpoint())
                 .credentials(properties.getAccessKey(), properties.getSecretKey())
                 .build();
@@ -35,7 +33,7 @@ public class MinioConfig {
 
     private void createBucketIfNotExists(MinioClient client, String bucketName) {
         try {
-            val exists = client.bucketExists(BucketExistsArgs.builder()
+            var exists = client.bucketExists(BucketExistsArgs.builder()
                     .bucket(bucketName)
                     .build());
 

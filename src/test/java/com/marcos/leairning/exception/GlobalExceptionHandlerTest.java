@@ -1,5 +1,6 @@
 package com.marcos.leairning.exception;
 
+import com.marcos.leairning.exception.controller.GlobalExceptionHandler;
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
