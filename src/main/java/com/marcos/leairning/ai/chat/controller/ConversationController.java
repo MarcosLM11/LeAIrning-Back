@@ -8,7 +8,6 @@ import com.marcos.leairning.ai.chat.service.ChatService;
 import com.marcos.leairning.ai.chat.service.ConversationService;
 import com.marcos.leairning.util.web.CurrentUserId;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -19,11 +18,15 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/conversations")
-@RequiredArgsConstructor
 public class ConversationController {
 
     private final ConversationService conversationService;
     private final ChatService chatService;
+
+    public ConversationController(ConversationService conversationService, ChatService chatService) {
+        this.conversationService = conversationService;
+        this.chatService = chatService;
+    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

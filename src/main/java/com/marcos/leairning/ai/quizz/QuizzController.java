@@ -2,10 +2,8 @@ package com.marcos.leairning.ai.quizz;
 
 import com.marcos.leairning.security.annotations.BusinessAuthorityOnly;
 import com.marcos.leairning.util.web.CurrentUserId;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.flogger.Flogger;
-import lombok.val;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
@@ -13,15 +11,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
-@Flogger
 @BusinessAuthorityOnly
 @RestController
 @RequestMapping("/quizz")
-@RequiredArgsConstructor
-@FieldDefaults(makeFinal = true, level = lombok.AccessLevel.PRIVATE)
 public class QuizzController {
 
-    QuizzService quizzService;
+    private static final Logger log = LoggerFactory.getLogger(QuizzController.class);
+    private final QuizzService quizzService;
+
+    public QuizzController(QuizzService quizzService) {
+        this.quizzService = quizzService;
+    }
 
     @PostMapping(path = "/generate/{documentId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<GeneratedQuizz> generate(
@@ -30,9 +30,9 @@ public class QuizzController {
             @RequestParam(defaultValue = "5") int numberOfQuestions,
             @RequestParam(defaultValue = "MEDIUM") QuestionType difficulty,
             @RequestParam(defaultValue = "es") String language) {
-        log.atInfo().log("Quiz request from userId=%s, documentId=%s, questions=%d, difficulty=%s, language=%s",
+        log.info("Quiz request from userId={}, documentId={}, questions=%d, difficulty={}, language={}",
                 userId, documentId, numberOfQuestions, difficulty, language);
-        val quizz = quizzService.generateQuizz(userId, documentId, numberOfQuestions, difficulty, language);
+        var quizz = quizzService.generateQuizz(userId, documentId, numberOfQuestions, difficulty, language);
         return ResponseEntity.ok(quizz);
     }
 

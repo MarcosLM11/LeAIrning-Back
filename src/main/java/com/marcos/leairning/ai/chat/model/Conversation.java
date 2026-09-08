@@ -3,19 +3,17 @@ package com.marcos.leairning.ai.chat.model;
 import com.marcos.leairning.documents.Document;
 import com.marcos.leairning.util.jpa.AbstractJpaAuditableEntity;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
-
+import lombok.*;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "conversations")
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = false, onlyExplicitlyIncluded = true)
 public class Conversation extends AbstractJpaAuditableEntity {
 
     @Id

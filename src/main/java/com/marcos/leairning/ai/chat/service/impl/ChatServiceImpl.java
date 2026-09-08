@@ -5,8 +5,8 @@ import com.marcos.leairning.ai.chat.dto.ChatRequestDTO;
 import com.marcos.leairning.ai.chat.dto.ChatResponseDTO;
 import com.marcos.leairning.ai.chat.service.ChatService;
 import com.marcos.leairning.ai.chat.service.ConversationService;
-import lombok.extern.flogger.Flogger;
-import lombok.val;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -24,9 +24,10 @@ import java.util.Set;
 import java.util.UUID;
 import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
 
-@Flogger
 @Service
 public class ChatServiceImpl implements ChatService {
+
+    private static final Logger log = LoggerFactory.getLogger(ChatServiceImpl.class);
 
     @Value("classpath:/promptTemplates/systemPromptTemplate.st")
     private Resource systemPromptTemplate;
@@ -45,57 +46,57 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public ChatResponseDTO askQuestion(ChatRequestDTO request, UUID userId, UUID conversationId, String language) {
-        val compositeId = userId + "_" + conversationId;
-        val documentIds = getDocuments(userId, conversationId);
+        var compositeId = userId + "_" + conversationId;
+        var documentIds = getDocuments(userId, conversationId);
         var feb = new FilterExpressionBuilder();
-        val filterExpression = feb.and(
+        var filterExpression = feb.and(
                 feb.eq("userId", userId.toString()),
                 feb.in("documentId", (Object[]) documentIds.stream().map(UUID::toString).toArray(String[]::new))
         ).build();
-        val documentRetriever = VectorStoreDocumentRetriever.builder()
+        var documentRetriever = VectorStoreDocumentRetriever.builder()
                 .vectorStore(vectorStore)
                 .similarityThreshold(0.3)
                 .topK(10)
                 .filterExpression(filterExpression)
                 .build();
 
-        val queryTransformer = CompressionQueryTransformer.builder()
+        var queryTransformer = CompressionQueryTransformer.builder()
                 .chatClientBuilder(chatClientBuilder.clone())
                 .build();
 
-        val retrievalAdvisor = RetrievalAugmentationAdvisor.builder()
+        var retrievalAdvisor = RetrievalAugmentationAdvisor.builder()
                 .queryTransformers(queryTransformer)
                 .documentRetriever(documentRetriever)
                 .build();
 
-        val memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
-        val chatClient = chatClientBuilder.clone()
+        var memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
+        var chatClient = chatClientBuilder.clone()
                 .defaultSystem(systemSpec -> systemSpec.text(systemPromptTemplate).param("language", language))
                 .defaultAdvisors(memoryAdvisor, retrievalAdvisor)
                 .build();
 
-        log.atInfo().log("[LLM REQUEST] User question: %s", request.question());
-        log.atInfo().log("[LLM REQUEST] Document IDs: %s", documentIds);
-        log.atInfo().log("[LLM REQUEST] Filter: userId=%s, documentIds=%s", userId, documentIds);
+        log.info("[LLM REQUEST] User question: {}", request.question());
+        log.info("[LLM REQUEST] Document IDs: {}", documentIds);
+        log.info("[LLM REQUEST] Filter: userId={}, documentIds={}", userId, documentIds);
 
-        val chatResponse = chatClient.prompt()
+        var chatResponse = chatClient.prompt()
                 .user(request.question())
                 .advisors(a -> a.param(CONVERSATION_ID, compositeId))
                 .call()
                 .chatResponse();
 
-        val answer = chatResponse.getResult().getOutput().getText();
+        var answer = chatResponse.getResult().getOutput().getText();
 
-        log.atInfo().log("[LLM RESPONSE] Answer: %s", answer);
-        log.atInfo().log("[LLM RESPONSE] Metadata: %s", chatResponse.getMetadata());
-        log.atInfo().log("Chat response generated for conversationId=%s", compositeId);
+        log.info("[LLM RESPONSE] Answer: {}", answer);
+        log.info("[LLM RESPONSE] Metadata: {}", chatResponse.getMetadata());
+        log.info("Chat response generated for conversationId={}", compositeId);
 
         return new ChatResponseDTO(answer, conversationId.toString(), Instant.now());
     }
 
     @Override
     public List<ChatMessageDTO> getMessages(UUID userId, UUID conversationId) {
-        val compositeId = userId + "_" + conversationId;
+        var compositeId = userId + "_" + conversationId;
         var messages = chatMemory.get(compositeId);
         return messages.stream()
                 .map(msg -> new ChatMessageDTO(

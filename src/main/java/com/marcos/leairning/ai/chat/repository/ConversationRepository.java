@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,13 +14,10 @@ import java.util.UUID;
 public interface ConversationRepository extends JpaRepository<Conversation, UUID> {
 
     Page<Conversation> findByUserIdOrderByLastUpdatedTimestampDesc(UUID userId, Pageable pageable);
-
     Optional<Conversation> findByIdAndUserId(UUID id, UUID userId);
+    void deleteByIdAndUserId(UUID id, UUID userId);
+    boolean existsByIdAndUserId(UUID id, UUID userId);
 
     @Query("SELECT c FROM Conversation c LEFT JOIN FETCH c.documents WHERE c.id = :id AND c.userId = :userId")
     Optional<Conversation> findByIdAndUserIdWithDocuments(@Param("id") UUID id, @Param("userId") UUID userId);
-
-    void deleteByIdAndUserId(UUID id, UUID userId);
-
-    boolean existsByIdAndUserId(UUID id, UUID userId);
 }

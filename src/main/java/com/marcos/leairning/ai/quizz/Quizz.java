@@ -4,5 +4,4 @@ import java.util.List;
 
 public record Quizz(
         List<Question> questions
-) {
-}
+) {}

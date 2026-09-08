@@ -18,11 +18,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import java.util.List;
 
-/**
- * Uses a large language model to translate document content to the same language as the user query.
- * This is useful when you want the RAG responses to be in the same language as the user's question,
- * regardless of the original document language.
- */
 public class TranslateResponsePostProcessor implements DocumentPostProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(TranslateResponsePostProcessor.class);
@@ -41,13 +36,11 @@ public class TranslateResponsePostProcessor implements DocumentPostProcessor {
         """);
 
     private static final String DEFAULT_TARGET_LANGUAGE = "en";
-
     private final ChatClient chatClient;
     private final PromptTemplate promptTemplate;
     private final LanguageDetector languageDetector;
 
-    private TranslateResponsePostProcessor(ChatClient.Builder chatClientBuilder, 
-                                          @Nullable PromptTemplate promptTemplate) {
+    private TranslateResponsePostProcessor(ChatClient.Builder chatClientBuilder, @Nullable PromptTemplate promptTemplate) {
         Assert.notNull(chatClientBuilder, "chatClientBuilder cannot be null");
 
         this.chatClient = chatClientBuilder.build();
@@ -114,12 +107,6 @@ public class TranslateResponsePostProcessor implements DocumentPostProcessor {
                 .toList();
     }
 
-    /**
-     * Detects the language of the given text using Apache Tika.
-     * 
-     * @param text the text to analyze
-     * @return the ISO 639-1 language code (e.g., "en", "es", "fr")
-     */
     private String detectLanguage(String text) {
         try {
             LanguageResult result = languageDetector.detect(text);
@@ -139,13 +126,6 @@ public class TranslateResponsePostProcessor implements DocumentPostProcessor {
         }
     }
 
-    /**
-     * Translates the content to the same language as the query using the LLM.
-     * 
-     * @param content the content to translate
-     * @param query the user query (used to determine the target language)
-     * @return the translated content
-     */
     private String translateContent(String content, String query) {
         try {
             return chatClient.prompt()

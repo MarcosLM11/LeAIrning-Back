@@ -1,32 +1,26 @@
 package com.marcos.leairning.ai.quizz;
 
-import com.marcos.leairning.documents.DocumentsService;
 import com.marcos.leairning.exception.QuizzNotFoundException;
-import lombok.extern.flogger.Flogger;
-import lombok.val;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
-import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
-
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.stream.Collectors;
 
-@Flogger
 @Service
 public class QuizzService {
 
+    private static final Logger log = LoggerFactory.getLogger(QuizzService.class);
     private static final int MAX_CHUNKS = 20;
     private static final int MIN_CHUNKS = 5;
-    private static final int CHARS_PER_CHUNK_ESTIMATE = 800;
 
     private static final String SYSTEM_PROMPT = """
         You are an educational quiz generator.
@@ -62,28 +56,24 @@ public class QuizzService {
         You MUST respond with ONLY valid JSON format and in the following language: {language}.
         """;
 
-    private final DocumentsService documentsService;
     private final ChatClient.Builder chatClientBuilder;
     private final QuizzRepository quizzRepository;
     private final ObjectMapper objectMapper;
     private final VectorStore vectorStore;
-
     private final SecureRandom random = new SecureRandom();
 
-    public QuizzService(QuizzRepository quizzRepository, DocumentsService documentsService, ChatClient.Builder chatClientBuilder, ObjectMapper objectMapper, VectorStore vectorStore) {
+    public QuizzService(QuizzRepository quizzRepository, ChatClient.Builder chatClientBuilder, ObjectMapper objectMapper, VectorStore vectorStore) {
         this.quizzRepository = quizzRepository;
-        this.documentsService = documentsService;
         this.chatClientBuilder = chatClientBuilder;
         this.objectMapper = objectMapper;
         this.vectorStore = vectorStore;
     }
 
     public GeneratedQuizz generateQuizz(UUID userId, UUID documentId, int numberOfQuestions, QuestionType difficulty, String language) {
-        val context = retrieveDiverseContext(userId, documentId, numberOfQuestions);
-        val chatClient = chatClientBuilder.clone().build();
-        log.atInfo().log("Generating quiz: %d questions, difficulty=%s, documentId=%s",
-                numberOfQuestions, difficulty, documentId);
-        val response = chatClient.prompt()
+        var context = retrieveDiverseContext(userId, documentId, numberOfQuestions);
+        var chatClient = chatClientBuilder.clone().build();
+        log.info("Generating quiz: {} questions, difficulty={}, documentId={}", numberOfQuestions, difficulty, documentId);
+        var response = chatClient.prompt()
                 .system(s -> s.text(SYSTEM_PROMPT)
                         .param("numberOfQuestions", numberOfQuestions)
                         .param("difficulty", difficulty.name())
@@ -92,7 +82,7 @@ public class QuizzService {
                 .user(context)
                 .call()
                 .entity(Quizz.class);
-        val entity = new QuizzEntity();
+        var entity = new QuizzEntity();
         entity.setDocumentId(documentId);
         entity.setUserId(userId);
         entity.setQuizz(objectMapper.writeValueAsString(response));
@@ -105,7 +95,7 @@ public class QuizzService {
     }
 
     public Quizz getQuizz(UUID userId, UUID quizzId) {
-        val entity = findByIdAndUserIdOrThrow(quizzId, userId);
+        var entity = findByIdAndUserIdOrThrow(quizzId, userId);
         return objectMapper.readValue(entity.getQuizz(), Quizz.class);
     }
 
@@ -115,7 +105,7 @@ public class QuizzService {
     }
 
     public void updateQuizzScore(UUID userId, UUID quizzId, int score) {
-        val entity = findByIdAndUserIdOrThrow(quizzId, userId);
+        var entity = findByIdAndUserIdOrThrow(quizzId, userId);
         entity.setLastScore(score);
         quizzRepository.save(entity);
     }
@@ -125,10 +115,7 @@ public class QuizzService {
                 .orElseThrow(() -> new QuizzNotFoundException("Quizz not found: " + quizzId));
     }
 
-    private String retrieveDiverseContext(
-            UUID userId,
-            UUID documentId,
-            int numberOfQuestions) {
+    private String retrieveDiverseContext(UUID userId, UUID documentId, int numberOfQuestions) {
 
         var feb = new FilterExpressionBuilder();
 
@@ -137,10 +124,7 @@ public class QuizzService {
                 feb.eq("documentId", documentId.toString())
         ).build();
 
-        int poolSize = Math.min(
-                MAX_CHUNKS,
-                Math.max(MIN_CHUNKS, numberOfQuestions * 4)
-        );
+        int poolSize = Math.clamp(numberOfQuestions * 4L, MIN_CHUNKS, MAX_CHUNKS);
 
         var retriever = VectorStoreDocumentRetriever.builder()
                 .vectorStore(vectorStore)
@@ -160,37 +144,22 @@ public class QuizzService {
         Set<String> uniqueChunks = new LinkedHashSet<>();
 
         for (String query : queries) {
-
             var docs = retriever.retrieve(new Query(query));
-
             docs.forEach(doc ->
                     uniqueChunks.add(cleanChunk(doc.getText()))
             );
         }
 
         List<String> shuffled = new ArrayList<>(uniqueChunks);
-
         Collections.shuffle(shuffled, random);
-
-        int maxChunksToUse = Math.min(
-                shuffled.size(),
-                numberOfQuestions * 3
-        );
-
+        int maxChunksToUse = Math.min(shuffled.size(), numberOfQuestions * 3);
         List<String> selected = shuffled.subList(0, maxChunksToUse);
-
-        log.atInfo().log("Selected %d chunks for quiz", selected.size());
-
+        log.info("Selected {} chunks for quiz", selected.size());
         return String.join("\n\n", selected);
     }
 
-    /**
-     * Remove useless or noisy text
-     */
     private String cleanChunk(String chunk) {
-
         if (chunk == null) return "";
-
         return chunk
                 .replaceAll("\\s+", " ")
                 .trim();
