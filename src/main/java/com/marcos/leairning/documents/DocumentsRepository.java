@@ -14,11 +14,8 @@ import java.util.UUID;
 public interface DocumentsRepository extends JpaRepository<Document, UUID> {
 
     Page<Document> findByUserId(UUID userId, Pageable pageable);
-
     Optional<Document> findByIdAndUserId(UUID id, UUID userId);
-
     Optional<Document> findByFileName(String fileName);
-
     List<Document> findByIdInAndUserId(List<UUID> ids, UUID userId);
 
     @Modifying

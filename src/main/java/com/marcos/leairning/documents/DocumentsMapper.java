@@ -6,8 +6,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface DocumentsMapper {
-
     Document toEntity(MultipartFile file);
-
     DocumentResponseDTO toDTO(Document document);
 }

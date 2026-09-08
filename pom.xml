@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.2</version>
+        <version>4.1.1</version>
         <relativePath/>
     </parent>
 
@@ -19,8 +19,8 @@
         <java.version>26</java.version>
         <spring-ai.version>2.0.0-M2</spring-ai.version>
         <spring-cloud.version>2025.1.1</spring-cloud.version>
-        <application.title>Documents Service</application.title>
-        <application.version>1.0.0</application.version>
+        <application.title>LeAIrningBack</application.title>
+        <application.version>2.0.0</application.version>
         <application.author>Marcos López Marín</application.author>
     </properties>
 
@@ -112,17 +112,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
-        <!-- ZALANDO LOGBOOK -->
-        <dependency>
-            <groupId>org.zalando</groupId>
-            <artifactId>logbook-spring-boot-starter</artifactId>
-            <version>4.0.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zalando</groupId>
-            <artifactId>logbook-netty</artifactId>
-            <version>4.0.2</version>
-        </dependency>
 
         <!-- JWT -->
         <dependency>
@@ -189,26 +178,6 @@
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>1.6.3</version>
-        </dependency>
-
-        <!-- Flogger -->
-        <dependency>
-            <groupId>com.google.flogger</groupId>
-            <artifactId>flogger</artifactId>
-            <version>0.9</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.flogger</groupId>
-            <artifactId>flogger-system-backend</artifactId>
-            <version>0.9</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.flogger</groupId>
-            <artifactId>flogger-slf4j-backend</artifactId>
-            <version>0.9</version>
-            <scope>compile</scope>
         </dependency>
 
         <!-- Caffeine Cache -->
@@ -385,5 +354,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

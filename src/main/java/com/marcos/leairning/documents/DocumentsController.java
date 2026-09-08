@@ -1,9 +1,6 @@
 package com.marcos.leairning.documents;
 
 import com.marcos.leairning.util.web.CurrentUserId;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.val;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -25,43 +22,35 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/documents")
-@RequiredArgsConstructor
-@FieldDefaults(makeFinal = true, level = lombok.AccessLevel.PRIVATE)
 public class DocumentsController {
 
-    DocumentsService service;
+    private final DocumentsService service;
+
+    public DocumentsController(DocumentsService service) {
+        this.service = service;
+    }
 
     @GetMapping
     public Page<DocumentResponseDTO> getDocuments(
             @CurrentUserId UUID userId,
             @PageableDefault(sort = "createdTimestamp", direction = Sort.Direction.DESC) Pageable pageable) {
-
         return service.getDocuments(userId, pageable);
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public List<DocumentResponseDTO> upload(
-            @CurrentUserId UUID userId,
-            @RequestParam("files") List<MultipartFile> files) {
-
+    public List<DocumentResponseDTO> upload(@CurrentUserId UUID userId, @RequestParam("files") List<MultipartFile> files) {
         return service.upload(userId, files);
     }
 
     @GetMapping("/{documentId}")
-    public DocumentResponseDTO getDocument(
-            @CurrentUserId UUID userId,
-            @PathVariable UUID documentId) {
-
+    public DocumentResponseDTO getDocument(@CurrentUserId UUID userId, @PathVariable UUID documentId) {
         return service.getDocument(userId, documentId);
     }
 
     @GetMapping("/{documentId}/download")
-    public ResponseEntity<byte[]> downloadDocument(
-            @CurrentUserId UUID userId,
-            @PathVariable UUID documentId) {
-
-        val document = service.getDocument(userId, documentId);
-        val content = service.downloadDocument(userId, documentId);
+    public ResponseEntity<byte[]> downloadDocument(@CurrentUserId UUID userId, @PathVariable UUID documentId) {
+        var document = service.getDocument(userId, documentId);
+        var content = service.downloadDocument(userId, documentId);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + document.fileName() + "\"")
@@ -71,18 +60,12 @@ public class DocumentsController {
     }
 
     @DeleteMapping("/{documentId}")
-    public void deleteDocument(
-            @CurrentUserId UUID userId,
-            @PathVariable UUID documentId) {
-
+    public void deleteDocument(@CurrentUserId UUID userId, @PathVariable UUID documentId) {
         service.deleteDocument(userId, documentId);
     }
 
     @DeleteMapping("/batch")
-    public void deleteDocuments(
-            @CurrentUserId UUID userId,
-            @RequestBody List<UUID> documentIds) {
-
+    public void deleteDocuments(@CurrentUserId UUID userId, @RequestBody List<UUID> documentIds) {
         service.deleteDocuments(userId, documentIds);
     }
 

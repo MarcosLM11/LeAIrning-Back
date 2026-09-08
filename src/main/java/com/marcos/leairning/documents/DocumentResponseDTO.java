@@ -9,5 +9,4 @@ public record DocumentResponseDTO(
         String contentType,
         Long size,
         String storagePath
-) {
-}
+) {}

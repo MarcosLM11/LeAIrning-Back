@@ -84,16 +84,15 @@ public class CacheConfig {
                 .build();
     }
 
-    // Para Bucket4j rate limiting
+    //Bucket4j rate limiting config
     @Bean
     javax.cache.CacheManager jCacheCacheManager() {
         val provider = Caching.getCachingProvider(CaffeineCachingProvider.class.getName());
         val cacheManager = provider.getCacheManager();
-
         val config = new CaffeineConfiguration<>();
+
         config.setMaximumSize(OptionalLong.of(properties.getRateLimitMaximumSize()));
         config.setExpireAfterAccess(OptionalLong.of(properties.getRateLimitExpireAfterAccess().toNanos()));
-
         cacheManager.createCache("rate-limit-buckets", config);
 
         return cacheManager;

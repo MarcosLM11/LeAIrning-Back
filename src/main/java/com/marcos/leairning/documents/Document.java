@@ -1,17 +1,25 @@
 package com.marcos.leairning.documents;
 
 import com.marcos.leairning.util.jpa.AbstractJpaVersionedAuditableEntity;
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.Getter;
 import lombok.ToString;
 import java.util.UUID;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "documents")
 @ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = false)
+@AllArgsConstructor
+@NoArgsConstructor
 public class Document extends AbstractJpaVersionedAuditableEntity {
 
     @Id
