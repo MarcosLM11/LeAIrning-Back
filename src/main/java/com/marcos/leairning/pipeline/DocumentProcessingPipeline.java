@@ -106,7 +106,7 @@ public class DocumentProcessingPipeline {
         return TokenTextSplitter.builder()
                 .withChunkSize(properties.getChunkSize())
                 .withKeepSeparator(properties.getKeepSeparator())
-                .withMinChunkLengthToEmbed(properties.getMinChunkLenght())
+                .withMinChunkLengthToEmbed(properties.getMinChunkLength())
                 .build();
     }
 

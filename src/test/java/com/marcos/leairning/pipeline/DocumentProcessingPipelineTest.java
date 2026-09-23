@@ -22,7 +22,7 @@ class DocumentProcessingPipelineTest {
         properties = new PipelineProperties();
         properties.setChunkSize(800);
         properties.setKeepSeparator(true);
-        properties.setMinChunkLenght(50);
+        properties.setMinChunkLength(50);
         pipeline = new DocumentProcessingPipeline(properties, repository);
     }
 

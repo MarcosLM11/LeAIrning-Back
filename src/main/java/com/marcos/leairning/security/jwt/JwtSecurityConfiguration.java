@@ -39,8 +39,13 @@ public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
             "/quizz/**"
     };
 
-    JwtSecretProperties properties;
-    RevokedTokenService revokedTokenService;
+    private final JwtSecretProperties properties;
+    private final RevokedTokenService revokedTokenService;
+
+    public JwtSecurityConfiguration(JwtSecretProperties properties, RevokedTokenService revokedTokenService) {
+        this.properties = properties;
+        this.revokedTokenService = revokedTokenService;
+    }
 
     @SneakyThrows
     @Order(HIGEST_PRECEDENCE + 4_000)

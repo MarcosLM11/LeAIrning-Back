@@ -55,8 +55,6 @@ public class MinioProcessingPipelineService {
     }
 
     public List<String> listPendingFiles() {
-        log.info("Listing pending files");
-        
         try {
             var results = client.listObjects(ListObjectsArgs.builder()
                     .bucket(properties.getProcessingBucket())
@@ -68,8 +66,6 @@ public class MinioProcessingPipelineService {
                     .filter(item -> !item.isDir())
                     .map(Item::objectName)
                     .toList();
-            log.info("Found {} pending files", pendingFiles.size());
-            
             return pendingFiles;
             
         } catch (Exception e) {

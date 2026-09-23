@@ -1,14 +1,15 @@
 package com.marcos.leairning.minio;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 @Getter
+@Setter
 @Validated
 @ConfigurationProperties(prefix = MinioProperties.PREFIX)
 public class MinioProperties {
-
     public static final String PREFIX = "leairning.storage.minio";
     private String endpoint;
     private String accessKey;
