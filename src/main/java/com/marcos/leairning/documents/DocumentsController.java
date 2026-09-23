@@ -1,10 +1,13 @@
 package com.marcos.leairning.documents;
 
 import com.marcos.leairning.util.web.CurrentUserId;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,13 +25,10 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/documents")
+@RequiredArgsConstructor
 public class DocumentsController {
 
     private final DocumentsService service;
-
-    public DocumentsController(DocumentsService service) {
-        this.service = service;
-    }
 
     @GetMapping
     public Page<DocumentResponseDTO> getDocuments(
@@ -38,7 +38,9 @@ public class DocumentsController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public List<DocumentResponseDTO> upload(@CurrentUserId UUID userId, @RequestParam("files") List<MultipartFile> files) {
+    public List<DocumentResponseDTO> upload(
+            @CurrentUserId UUID userId,
+            @RequestParam("files") List<MultipartFile> files) {
         return service.upload(userId, files);
     }
 
@@ -48,13 +50,13 @@ public class DocumentsController {
     }
 
     @GetMapping("/{documentId}/download")
-    public ResponseEntity<byte[]> downloadDocument(@CurrentUserId UUID userId, @PathVariable UUID documentId) {
+    public ResponseEntity<Resource> downloadDocument(@CurrentUserId UUID userId, @PathVariable UUID documentId) {
         var document = service.getDocument(userId, documentId);
         var content = service.downloadDocument(userId, documentId);
-
+        var contentDisposition = ContentDisposition.attachment().filename(document.fileName()).build();
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + document.fileName() + "\"")
                 .contentType(MediaType.parseMediaType(document.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION,contentDisposition.toString())
                 .contentLength(content.length)
                 .body(content);
     }
@@ -68,5 +70,4 @@ public class DocumentsController {
     public void deleteDocuments(@CurrentUserId UUID userId, @RequestBody List<UUID> documentIds) {
         service.deleteDocuments(userId, documentIds);
     }
-
 }

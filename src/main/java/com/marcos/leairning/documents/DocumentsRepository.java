@@ -20,6 +20,6 @@ public interface DocumentsRepository extends JpaRepository<Document, UUID> {
 
     @Modifying
     @Query("DELETE FROM Document d WHERE d.id IN :ids AND d.userId = :userId")
-    int deleteByIdInAndUserId(List<UUID> ids, UUID userId);
+    void deleteByIdInAndUserId(List<UUID> ids, UUID userId);
 
 }
