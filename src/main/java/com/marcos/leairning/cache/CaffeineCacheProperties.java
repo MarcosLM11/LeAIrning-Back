@@ -13,8 +13,6 @@ public class CaffeineCacheProperties {
 
     public static final String PREFIX = "leairning.cache.caffeine";
     public static final String DEFAULT_POLICY = "default";
-    public static final String STRICT_POLICY = "strict";
-    public static final String LENIENT_POLICY = "lenient";
 
     @Positive
     private int documentsMaximumSize = 1000;

@@ -1,6 +1,5 @@
 package com.marcos.leairning.ai.quizz;
 
-import com.marcos.leairning.security.annotations.BusinessAuthorityOnly;
 import com.marcos.leairning.util.web.CurrentUserId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,11 +7,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @Slf4j
-@BusinessAuthorityOnly
+@PreAuthorize("hasRole('ROLE_USER')")
 @RestController
 @RequestMapping("/quizz")
 @RequiredArgsConstructor

@@ -56,8 +56,8 @@ public class DocumentsController {
         var contentDisposition = ContentDisposition.attachment().filename(document.fileName()).build();
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(document.contentType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION,contentDisposition.toString())
-                .contentLength(content.length)
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
+                .contentLength(document.size())
                 .body(content);
     }
 

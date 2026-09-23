@@ -3,7 +3,7 @@ package com.marcos.leairning.etl;
 import com.marcos.leairning.documents.DocumentUploadedEvent;
 import com.marcos.leairning.documents.DocumentsRepository;
 import com.marcos.leairning.etl.reader.DocumentReaderFactory;
-import com.marcos.leairning.exception.DocumentNotFoundException;
+import com.marcos.leairning.exception.NotFoundException;
 import com.marcos.leairning.minio.MinioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,6 @@ public class DocumentProcessingService {
     private final DocumentReaderFactory readerFactory;
     private final ChunkingService chunkingService;
     private final VectorStoreWriterService writerService;
-    private final ThumbnailPdfService thumbnailPdfService;
     private final EtlMetrics metrics;
 
     @Async("etlTaskExecutor")
@@ -37,10 +36,9 @@ public class DocumentProcessingService {
         writerService.markProcessing(documentId);
         var sample = metrics.startTimer();
         try {
-            var metadata = documentRepository.findById(documentId).orElseThrow(DocumentNotFoundException::new);
+            var metadata = documentRepository.findById(documentId).orElseThrow(() -> new NotFoundException("Document not found: " + documentId));
             var resource = minioService.download(metadata.getStoragePath());
             log.debug("Downloaded document {}", documentId);
-            thumbnailPdfService.generate(documentId, metadata.getContentType(), resource);
             var rawDocuments = readerFactory.get(metadata.getContentType()).read(resource);
             log.debug("Read document {}: {} raw document(s), contentType={}", documentId, rawDocuments.size(), metadata.getContentType());
             var chunks = chunkingService.chunk(rawDocuments, documentId, metadata.getUserId(), metadata.getFileName());

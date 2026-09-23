@@ -2,7 +2,7 @@ package com.marcos.leairning.etl;
 
 import com.marcos.leairning.documents.DocumentStatus;
 import com.marcos.leairning.documents.DocumentsRepository;
-import com.marcos.leairning.exception.DocumentNotFoundException;
+import com.marcos.leairning.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -26,7 +26,7 @@ public class VectorStoreWriterService {
     @Transactional
     public void write(UUID documentId, List<Document> chunks) {
         vectorStore.add(chunks);
-        var document = documentRepository.findById(documentId).orElseThrow(DocumentNotFoundException::new);
+        var document = documentRepository.findById(documentId).orElseThrow(() -> new NotFoundException("Document not found: " + documentId));
         document.setStatus(DocumentStatus.PROCESSED);
         documentRepository.save(document);
     }
@@ -37,7 +37,7 @@ public class VectorStoreWriterService {
     }
 
     private void updateStatus(UUID documentId, DocumentStatus status) {
-        var document = documentRepository.findById(documentId).orElseThrow(DocumentNotFoundException::new);
+        var document = documentRepository.findById(documentId).orElseThrow(() -> new NotFoundException("Document not found: " + documentId));
         document.setStatus(status);
         documentRepository.save(document);
     }

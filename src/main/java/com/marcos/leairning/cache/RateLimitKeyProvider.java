@@ -10,10 +10,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Component("rateLimitKeyProvider")
 @RequiredArgsConstructor
 public class RateLimitKeyProvider {
-
     private static final String X_FORWARDED_FOR = "X-Forwarded-For";
     private static final String UNKNOWN = "unknown";
-
     private final AuthProperties authProperties;
 
     public String getIp() {

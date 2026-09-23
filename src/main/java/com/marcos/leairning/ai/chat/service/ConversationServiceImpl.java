@@ -6,8 +6,7 @@ import com.marcos.leairning.ai.chat.repository.ConversationRepository;
 import com.marcos.leairning.ai.chat.dto.ConversationResponseDTO;
 import com.marcos.leairning.documents.Document;
 import com.marcos.leairning.documents.DocumentsRepository;
-import com.marcos.leairning.exception.ConversationNotFoundException;
-import com.marcos.leairning.exception.DocumentNotFoundException;
+import com.marcos.leairning.exception.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -51,7 +50,7 @@ public class ConversationServiceImpl implements ConversationService {
             Set<UUID> missingIds = documentIds.stream()
                     .filter(id -> !foundIds.contains(id))
                     .collect(java.util.stream.Collectors.toSet());
-            throw new DocumentNotFoundException("Documents not found or not accessible: " + missingIds);
+            throw new NotFoundException("Documents not found or not accessible: " + missingIds);
         }
 
         var conversation = new Conversation();
@@ -78,7 +77,7 @@ public class ConversationServiceImpl implements ConversationService {
         return conversationRepository
                 .findByIdAndUserIdWithDocuments(conversationId, userId)
                 .map(mapper::toDTO)
-                .orElseThrow(() -> new ConversationNotFoundException("Conversation not found: " + conversationId));
+                .orElseThrow(() -> new NotFoundException("Conversation not found: " + conversationId));
     }
 
     @Override
@@ -86,7 +85,7 @@ public class ConversationServiceImpl implements ConversationService {
     public Set<UUID> getDocumentIds(UUID userId, UUID conversationId) {
         var conversation = conversationRepository
                 .findByIdAndUserIdWithDocuments(conversationId, userId)
-                .orElseThrow(() -> new ConversationNotFoundException("Conversation not found: " + conversationId));
+                .orElseThrow(() -> new NotFoundException("Conversation not found: " + conversationId));
 
         return conversation.getDocumentIds();
     }
@@ -95,7 +94,7 @@ public class ConversationServiceImpl implements ConversationService {
     @Transactional
     public void delete(UUID userId, UUID conversationId) {
         if (!conversationRepository.existsByIdAndUserId(conversationId, userId)) {
-            throw new ConversationNotFoundException("Conversation not found: " + conversationId);
+            throw new NotFoundException("Conversation not found: " + conversationId);
         }
         conversationRepository.deleteByIdAndUserId(conversationId, userId);
         log.atInfo().log("Deleted conversation id={} for userId={}", conversationId, userId);
@@ -106,7 +105,7 @@ public class ConversationServiceImpl implements ConversationService {
     public ConversationResponseDTO updateTitle(UUID userId, UUID conversationId, String newTitle) {
         var conversation = conversationRepository
                 .findByIdAndUserId(conversationId, userId)
-                .orElseThrow(() -> new ConversationNotFoundException("Conversation not found: " + conversationId));
+                .orElseThrow(() -> new NotFoundException("Conversation not found: " + conversationId));
 
         conversation.setTitle(newTitle);
         var saved = conversationRepository.save(conversation);

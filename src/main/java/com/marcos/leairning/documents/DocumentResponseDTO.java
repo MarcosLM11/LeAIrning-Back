@@ -12,7 +12,6 @@ public record DocumentResponseDTO(
         String contentType,
         Long size,
         String storagePath,
-        String thumbnailPath,
         DocumentStatus status,
         Instant createdTimestamp
 ) {}

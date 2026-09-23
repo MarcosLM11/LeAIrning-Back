@@ -9,11 +9,11 @@ import com.marcos.leairning.exception.EmailAlreadyRegisteredException;
 import com.marcos.leairning.exception.InvalidCredentialsException;
 import com.marcos.leairning.exception.InvalidRefreshTokenException;
 import com.marcos.leairning.exception.InvalidVerificationTokenException;
-import com.marcos.leairning.exception.UserNotFoundException;
+import com.marcos.leairning.exception.NotFoundException;
 import com.marcos.leairning.security.jwt.JwtProperties;
 import com.marcos.leairning.security.jwt.JwtService;
-import com.marcos.leairning.security.refreshtoken.RefreshToken;
-import com.marcos.leairning.security.refreshtoken.RefreshTokenRepository;
+import com.marcos.leairning.security.token.RefreshToken;
+import com.marcos.leairning.security.token.RefreshTokenRepository;
 import com.marcos.leairning.security.token.TokenPair;
 import com.marcos.leairning.security.token.TokenPairService;
 import com.marcos.leairning.users.User;
@@ -33,10 +33,11 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
+import static com.marcos.leairning.cache.CaffeineCacheProperties.DEFAULT_POLICY;
 
 @Slf4j
 @Service
-@RateLimiting(name = "strict")
+@RateLimiting(name = DEFAULT_POLICY)
 @RequiredArgsConstructor
 public class AuthService {
 
@@ -70,7 +71,7 @@ public class AuthService {
             }
             loginAttemptService.resetAttempts(request.email());
             return issueTokenPair(user);
-        } catch (UserNotFoundException e) {
+        } catch (NotFoundException e) {
             loginAttemptService.recordFailedAttempt(request.email());
             throw new InvalidCredentialsException();
         }

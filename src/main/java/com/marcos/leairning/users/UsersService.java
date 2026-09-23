@@ -1,7 +1,7 @@
 package com.marcos.leairning.users;
 
-import com.marcos.leairning.exception.UserNotFoundException;
-import com.marcos.leairning.security.refreshtoken.RefreshTokenRepository;
+import com.marcos.leairning.exception.NotFoundException;
+import com.marcos.leairning.security.token.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -35,7 +35,7 @@ public class UsersService {
     }
 
     public User getEntityByEmail(String email) {
-        return repository.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
+        return repository.findByEmail(email).orElseThrow(() -> new NotFoundException("User not found: " + email));
     }
 
     @Transactional
@@ -73,7 +73,7 @@ public class UsersService {
     @CacheEvict(value = "users", key = "#id")
     public void delete(UUID id) {
         if (!repository.existsById(id)) {
-            throw new UserNotFoundException(id);
+            throw new NotFoundException("User not found: " + id);
         }
         refreshTokenRepository.revokeAllActiveByUserId(id);
         repository.deleteById(id);
@@ -81,7 +81,7 @@ public class UsersService {
     }
 
     private User findUserOrThrow(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+        return repository.findById(id).orElseThrow(() -> new NotFoundException("User not found: " + id));
     }
 
     private static UserResponseDTO toResponse(User user) {

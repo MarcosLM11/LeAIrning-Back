@@ -140,22 +140,6 @@ bucket4j:
           - capacity: 60
             time: 1
             unit: minutes
-    - name: strict
-      cache-name: rate-limit-buckets
-      rate-limit:
-        cache-key: '@rateLimitKeyProvider.getIp()'
-        bandwidths:
-          - capacity: 10
-            time: 1
-            unit: minutes
-    - name: lenient
-      cache-name: rate-limit-buckets
-      rate-limit:
-        cache-key: '@rateLimitKeyProvider.getIp()'
-        bandwidths:
-          - capacity: 100
-            time: 1
-            unit: minutes
 
 management:
   otlp:

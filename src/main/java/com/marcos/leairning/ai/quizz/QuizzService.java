@@ -1,6 +1,7 @@
 package com.marcos.leairning.ai.quizz;
 
-import com.marcos.leairning.exception.QuizzNotFoundException;
+import com.marcos.leairning.exception.NotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.rag.Query;
@@ -12,22 +13,39 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class QuizzService {
 
     private static final int MAX_CHUNKS = 20;
     private static final int MIN_CHUNKS = 5;
+    private static final List<String> DIVERSITY_QUERIES = List.of(
+            "definitions and key concepts",
+            "important facts and details",
+            "core mechanisms and explanations",
+            "examples and applications",
+            "technical details"
+    );
 
     private static final String SYSTEM_PROMPT = """
         You are an educational quiz generator.
         
         Your task is to generate EXACTLY {numberOfQuestions} questions based ONLY on factual information explicitly present in the provided context.
-        
+
+        The questions MUST match this difficulty level: {difficulty}.
+        - EASY: straightforward recall of a single explicit fact or definition.
+        - MEDIUM: requires connecting two related facts or explaining a mechanism.
+        - HARD: requires reasoning about implications, comparisons, or multi-step mechanisms described in the text.
+
         STRICT RULES:
-        
+
         - Each question MUST be answerable using a specific factual statement from the context.
         - DO NOT generate meta questions about the reader, chapters, intentions, benefits, or opinions.
         - DO NOT ask questions about structure (e.g., "What is the purpose of this chapter?")
@@ -61,13 +79,6 @@ public class QuizzService {
     private final VectorStore vectorStore;
     private final SecureRandom random = new SecureRandom();
 
-    public QuizzService(QuizzRepository quizzRepository, ChatClient.Builder chatClientBuilder, ObjectMapper objectMapper, VectorStore vectorStore) {
-        this.quizzRepository = quizzRepository;
-        this.chatClientBuilder = chatClientBuilder;
-        this.objectMapper = objectMapper;
-        this.vectorStore = vectorStore;
-    }
-
     public GeneratedQuizz generateQuizz(UUID userId, UUID documentId, int numberOfQuestions, QuestionType difficulty, String language) {
         var context = retrieveDiverseContext(userId, documentId, numberOfQuestions);
         var chatClient = chatClientBuilder.clone().build();
@@ -77,7 +88,6 @@ public class QuizzService {
                         .param("numberOfQuestions", numberOfQuestions)
                         .param("difficulty", difficulty.name())
                         .param("language", language))
-
                 .user(context)
                 .call()
                 .entity(Quizz.class);
@@ -111,56 +121,32 @@ public class QuizzService {
 
     private QuizzEntity findByIdAndUserIdOrThrow(UUID quizzId, UUID userId) {
         return quizzRepository.findByIdAndUserId(quizzId, userId)
-                .orElseThrow(() -> new QuizzNotFoundException("Quizz not found: " + quizzId));
+                .orElseThrow(() -> new NotFoundException("Quizz not found: " + quizzId));
     }
 
     private String retrieveDiverseContext(UUID userId, UUID documentId, int numberOfQuestions) {
-
         var feb = new FilterExpressionBuilder();
-
         var filter = feb.and(
                 feb.eq("userId", userId.toString()),
                 feb.eq("documentId", documentId.toString())
         ).build();
 
-        int poolSize = Math.clamp(numberOfQuestions * 4L, MIN_CHUNKS, MAX_CHUNKS);
-
         var retriever = VectorStoreDocumentRetriever.builder()
                 .vectorStore(vectorStore)
                 .similarityThreshold(0.15)
-                .topK(poolSize)
+                .topK(Math.clamp(numberOfQuestions * 4L, MIN_CHUNKS, MAX_CHUNKS))
                 .filterExpression(filter)
                 .build();
 
-        List<String> queries = List.of(
-                "definitions and key concepts",
-                "important facts and details",
-                "core mechanisms and explanations",
-                "examples and applications",
-                "technical details"
-        );
+        var chunks = DIVERSITY_QUERIES.stream()
+                .flatMap(query -> retriever.retrieve(new Query(query)).stream())
+                .map(doc -> doc.getText().replaceAll("\\s+", " ").trim())
+                .distinct()
+                .collect(Collectors.toCollection(ArrayList::new));
 
-        Set<String> uniqueChunks = new LinkedHashSet<>();
-
-        for (String query : queries) {
-            var docs = retriever.retrieve(new Query(query));
-            docs.forEach(doc ->
-                    uniqueChunks.add(cleanChunk(doc.getText()))
-            );
-        }
-
-        List<String> shuffled = new ArrayList<>(uniqueChunks);
-        Collections.shuffle(shuffled, random);
-        int maxChunksToUse = Math.min(shuffled.size(), numberOfQuestions * 3);
-        List<String> selected = shuffled.subList(0, maxChunksToUse);
+        Collections.shuffle(chunks, random);
+        var selected = chunks.subList(0, Math.min(chunks.size(), numberOfQuestions * 3));
         log.info("Selected {} chunks for quiz", selected.size());
         return String.join("\n\n", selected);
-    }
-
-    private String cleanChunk(String chunk) {
-        if (chunk == null) return "";
-        return chunk
-                .replaceAll("\\s+", " ")
-                .trim();
     }
 }
