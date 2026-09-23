@@ -24,6 +24,6 @@ public class QuizzEntity extends AbstractJpaAuditableEntity {
     private UUID id;
     private UUID userId;
     private UUID documentId;
-    private String quizz;
+    private String quiz;
     private int lastScore;
 }

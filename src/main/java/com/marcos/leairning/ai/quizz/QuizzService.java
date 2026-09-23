@@ -1,8 +1,7 @@
 package com.marcos.leairning.ai.quizz;
 
 import com.marcos.leairning.exception.QuizzNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
@@ -15,10 +14,10 @@ import tools.jackson.databind.ObjectMapper;
 import java.security.SecureRandom;
 import java.util.*;
 
+@Slf4j
 @Service
 public class QuizzService {
 
-    private static final Logger log = LoggerFactory.getLogger(QuizzService.class);
     private static final int MAX_CHUNKS = 20;
     private static final int MIN_CHUNKS = 5;
 
@@ -85,7 +84,7 @@ public class QuizzService {
         var entity = new QuizzEntity();
         entity.setDocumentId(documentId);
         entity.setUserId(userId);
-        entity.setQuizz(objectMapper.writeValueAsString(response));
+        entity.setQuiz(objectMapper.writeValueAsString(response));
         quizzRepository.save(entity);
         return new GeneratedQuizz(entity.getId(), response.questions());
     }
@@ -96,7 +95,7 @@ public class QuizzService {
 
     public Quizz getQuizz(UUID userId, UUID quizzId) {
         var entity = findByIdAndUserIdOrThrow(quizzId, userId);
-        return objectMapper.readValue(entity.getQuizz(), Quizz.class);
+        return objectMapper.readValue(entity.getQuiz(), Quizz.class);
     }
 
     public void deleteQuizz(UUID userId, UUID quizzId) {
