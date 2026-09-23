@@ -7,14 +7,6 @@ leairning:
       users-expire-after-access: 60s
       rate-limit-maximum-size: 100000
       rate-limit-expire-after-access: 1h
-  storage:
-    minio:
-      endpoint: http://localhost:9000
-      access-key: minioadmin
-      secret-key: minioadmin
-      documents-bucket: leairning-documents
-      processing-bucket: leairning-processing
-      auto-create-buckets: true
   pipeline:
     chunk-size: 500
     keep-separator: false

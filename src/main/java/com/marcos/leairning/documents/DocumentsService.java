@@ -3,8 +3,6 @@ package com.marcos.leairning.documents;
 import com.giffing.bucket4j.spring.boot.starter.context.RateLimiting;
 import com.marcos.leairning.exception.DocumentNotFoundException;
 import com.marcos.leairning.exception.DocumentProcessingException;
-import com.marcos.leairning.minio.MinioDocumentStorageService;
-import com.marcos.leairning.minio.MinioProcessingPipelineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
