@@ -12,7 +12,6 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 import java.util.Objects;
 import java.util.UUID;
 import static java.util.UUID.fromString;
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Component
 public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResolver {
@@ -32,8 +31,8 @@ public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResol
         }
         var principal = authentication.getPrincipal();
         if (principal instanceof Jwt jwt) {
-            var sub = jwt.getClaimAsString("sub");
-            if (isBlank(sub)) {
+            var sub = jwt.getSubject();
+            if (sub == null || sub.isEmpty()) {
                 return null;
             }
             return fromString(sub);

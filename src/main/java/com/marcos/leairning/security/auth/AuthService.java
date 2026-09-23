@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.marcos.leairning.email.EmailService;
 import com.marcos.leairning.exception.AccountLockedException;
 import com.marcos.leairning.exception.AccountNotVerifiedException;
+import com.marcos.leairning.exception.EmailAlreadyRegisteredException;
 import com.marcos.leairning.exception.InvalidCredentialsException;
 import com.marcos.leairning.exception.InvalidRefreshTokenException;
 import com.marcos.leairning.exception.InvalidVerificationTokenException;
@@ -16,6 +17,8 @@ import com.marcos.leairning.security.refreshtoken.RefreshTokenRepository;
 import com.marcos.leairning.security.token.TokenPair;
 import com.marcos.leairning.security.token.TokenPairService;
 import com.marcos.leairning.users.User;
+import com.marcos.leairning.users.UserRole;
+import com.marcos.leairning.users.UsersRepository;
 import com.marcos.leairning.users.UsersService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +44,7 @@ public class AuthService {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final UsersService usersService;
+    private final UsersRepository usersRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
@@ -74,7 +78,19 @@ public class AuthService {
 
     @Transactional
     public void register(RegisterRequestDTO request) {
-        usersService.save(request);
+        if (usersRepository.findByEmail(request.email()).isPresent()) {
+            throw new EmailAlreadyRegisteredException(request.email());
+        }
+        var user = User.builder()
+                .email(request.email())
+                .username(request.name())
+                .pictureUrl(request.pictureUrl())
+                .password(passwordEncoder.encode(request.password()))
+                .role(UserRole.ROLE_USER)
+                .verified(false)
+                .provider("local")
+                .build();
+        usersRepository.save(user);
         val verificationToken = UUID.randomUUID().toString();
         verificationTokenCache.put(verificationToken, request.email());
         emailService.sendVerifyEmail(request.email(), verificationToken);

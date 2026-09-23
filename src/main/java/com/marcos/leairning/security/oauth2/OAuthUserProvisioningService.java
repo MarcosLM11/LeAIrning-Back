@@ -1,7 +1,8 @@
 package com.marcos.leairning.security.oauth2;
 
 import com.marcos.leairning.users.User;
-import com.marcos.leairning.users.UsersService;
+import com.marcos.leairning.users.UserRole;
+import com.marcos.leairning.users.UsersRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -9,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class OAuthUserProvisioningService {
-    private final UsersService usersService;
+    private final UsersRepository usersRepository;
     private final OAuthIdentityRepository identityRepository;
 
     public User findOrCreateUser(OAuthUserInfo info) {
@@ -34,11 +35,19 @@ public class OAuthUserProvisioningService {
 
     private User resolveUser(OAuthUserInfo info) {
         if (info.emailVerified()) {
-            var existingUser = usersService.findEntityByEmail(info.email());
+            var existingUser = usersRepository.findByEmail(info.email());
             if (existingUser.isPresent()) {
                 return existingUser.get();
             }
         }
-        return usersService.createOAuthUser(info.email(), info.name(), info.pictureUrl(), info.provider().name().toLowerCase());
+        var user = User.builder()
+                .email(info.email())
+                .username(info.name())
+                .pictureUrl(info.pictureUrl())
+                .role(UserRole.ROLE_USER)
+                .verified(true)
+                .provider(info.provider().name().toLowerCase())
+                .build();
+        return usersRepository.save(user);
     }
 }

@@ -1,11 +1,12 @@
 package com.marcos.leairning.documents;
 
 import com.giffing.bucket4j.spring.boot.starter.context.RateLimiting;
+import com.marcos.leairning.etl.ChunkingService;
 import com.marcos.leairning.exception.DocumentNotFoundException;
 import com.marcos.leairning.exception.DocumentProcessingException;
+import com.marcos.leairning.minio.MinioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tika.Tika;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.cache.annotation.CacheEvict;
@@ -27,12 +28,8 @@ import static com.marcos.leairning.cache.CaffeineCacheProperties.DEFAULT_POLICY;
 @RequiredArgsConstructor
 public class DocumentsService {
 
-    private static final long MAX_DECOMPRESSION_RATIO = 100;
-    private static final Tika TIKA = new Tika();
-
     private final DocumentsRepository repository;
-    private final MinioDocumentStorageService storageService;
-    private final MinioProcessingPipelineService pipelineService;
+    private final MinioService minioService;
     private final VectorStore vectorStore;
 
     public Page<DocumentResponseDTO> getDocuments(UUID userId, Pageable pageable) {
@@ -61,8 +58,8 @@ public class DocumentsService {
     public void deleteDocument(UUID userId, UUID documentId) {
         log.info("User {} deleting document {}", userId, documentId);
         var document = findDocumentWithOwnershipValidation(documentId, userId);
-        storageService.delete(document.getStoragePath());
-        storageService.delete(document.getThumbnailPath());
+        minioService.delete(document.getStoragePath());
+        minioService.delete(document.getThumbnailPath());
         repository.deleteById(documentId);
         vectorStore.delete(new FilterExpressionBuilder()
                 .eq(ChunkingService.METADATA_DOCUMENT_ID, documentId.toString())
@@ -72,12 +69,12 @@ public class DocumentsService {
     public Resource downloadDocument(UUID userId, UUID documentId) {
         log.info("User {} downloading document {}", userId, documentId);
         var document = findDocumentWithOwnershipValidation(documentId, userId);
-        return storageService.download(document.getStoragePath());
+        return minioService.download(document.getStoragePath());
     }
 
     public Resource downloadThumbnail(UUID userId, UUID documentId) {
         var document = findDocumentWithOwnershipValidation(documentId, userId);
-        return storageService.download(document.getThumbnailPath());
+        return minioService.download(document.getThumbnailPath());
     }
 
     @Transactional
@@ -86,10 +83,10 @@ public class DocumentsService {
         var documentsToDelete = repository.findByIdInAndUserId(documentIds, userId);
         if (documentsToDelete.isEmpty()) return;
 
-        documentsToDelete.forEach(doc -> storageService.delete(doc.getStoragePath()));
-        documentsToDelete.forEach(doc -> storageService.delete(doc.getThumbnailPath()));
+        documentsToDelete.forEach(doc -> minioService.delete(doc.getStoragePath()));
+        documentsToDelete.forEach(doc -> minioService.delete(doc.getThumbnailPath()));
         documentsToDelete.forEach(doc -> vectorStore.delete(new FilterExpressionBuilder()
-                .eq(ChunkingService.METADATA_DOCUMENT_ID, documentId.toString())
+                .eq(ChunkingService.METADATA_DOCUMENT_ID, doc.getId().toString())
                 .build()));
         
         var idsToDelete = documentsToDelete.stream()
@@ -114,7 +111,7 @@ public class DocumentsService {
                 .userId(userId)
                 .build();
         try {
-            storageService.store(file.getBytes(), document);
+            minioService.store(file.getBytes(), document);
         } catch (IOException e) {
             throw new DocumentProcessingException("Failed to read file bytes", e);
         }
