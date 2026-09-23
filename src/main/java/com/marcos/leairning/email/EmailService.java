@@ -1,6 +1,5 @@
 package com.marcos.leairning.email;
 
-import com.marcos.leairning.security.auth.AuthProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;

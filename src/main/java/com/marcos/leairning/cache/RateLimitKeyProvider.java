@@ -1,6 +1,5 @@
 package com.marcos.leairning.cache;
 
-import com.marcos.leairning.security.auth.AuthProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

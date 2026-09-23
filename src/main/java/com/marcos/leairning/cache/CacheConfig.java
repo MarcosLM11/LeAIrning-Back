@@ -4,7 +4,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.jcache.configuration.CaffeineConfiguration;
 import com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider;
-import com.marcos.leairning.security.auth.AuthProperties;
 import com.marcos.leairning.security.auth.LoginLockoutProperties;
 import com.marcos.leairning.security.token.TokenPair;
 import lombok.RequiredArgsConstructor;

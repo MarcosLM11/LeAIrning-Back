@@ -1,6 +1,5 @@
 package com.marcos.leairning.security;
 
-import com.marcos.leairning.security.auth.AuthProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.context.annotation.Bean;
