@@ -1,11 +1,13 @@
 package com.marcos.leairning.security.auth;
 
+import com.marcos.leairning.security.token.TokenPair;
+import com.marcos.leairning.util.web.CurrentUserId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth")
@@ -16,34 +18,34 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return service.register(request);
+    public void register(@Valid @RequestBody RegisterRequestDTO request) {
+        service.register(request);
+    }
+
+    @PostMapping("/verify")
+    public AuthCodeResponse verify(@RequestParam String token) {
+        return new AuthCodeResponse(service.verify(token));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<TokenPairResponse> login(@Valid @RequestBody LoginRequest request) {
-        return service.login(request);
+    public ResponseEntity<TokenPair> login(@Valid @RequestBody LoginRequestDTO request) {
+        return ResponseEntity.ok(service.login(request));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<TokenPairResponse> refresh(@RequestBody RefreshRequest request) {
-        return service.refresh(request);
+    public ResponseEntity<TokenPair> refresh(@Valid @RequestBody RefreshRequestDTO request) {
+        return ResponseEntity.ok(service.refresh(request));
     }
 
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void logout(@RequestBody RefreshRequest request) {
+    public void logout(@Valid @RequestBody RefreshRequestDTO request) {
         service.logout(request);
-    }
-
-    @PostMapping("/code/exchange")
-    public ResponseEntity<TokenPairResponse> exchangeCode(@RequestBody CodeExchangeRequest request) {
-        return service.exchangeCode(request.code());
     }
 
     @PatchMapping("/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void changePassword(@Valid @RequestBody ChangePasswordRequest request, @AuthenticationPrincipal AuthenticatedUser principal) {
-        service.changePassword(principal, request);
+    public void changePassword(@Valid @RequestBody ChangePasswordRequestDTO request, @CurrentUserId UUID userId) {
+        service.changePassword(userId, request);
     }
 }

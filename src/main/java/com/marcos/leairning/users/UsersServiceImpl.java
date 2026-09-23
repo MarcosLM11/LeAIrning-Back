@@ -3,8 +3,7 @@ package com.marcos.leairning.users;
 import com.marcos.leairning.exception.EmailAlreadyRegisteredException;
 import com.marcos.leairning.exception.UserNotFoundException;
 import com.marcos.leairning.security.auth.RegisterRequestDTO;
-import com.marcos.leairning.security.jwt.RevokedTokenService;
-import com.marcos.leairning.security.oauth2.Oauth2UserCreateDTO;
+import com.marcos.leairning.security.refreshtoken.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -21,27 +20,32 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class UsersServiceImpl implements UsersService {
+    private static final UserRole DEFAULT_ROLE = UserRole.ROLE_USER;
     private final UsersRepository repository;
     private final PasswordEncoder passwordEncoder;
-    private final RevokedTokenService revokedTokenService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     @Cacheable(value = "users", key = "#id")
     public UserResponseDTO get(UUID id) {
         log.info("Fetching user with id: {}", id);
-        return mapper.toResponse(findUserOrThrow(id));
+        return toResponse(findUserOrThrow(id));
+    }
+
+    @Override
+    public User getEntityById(UUID id) {
+        return findUserOrThrow(id);
     }
 
     @Override
     public Optional<UserResponseDTO> getByEmail(String email) {
         log.info("Fetching user by email: {}", email);
-        return repository.findByEmail(email).map(mapper::toResponse);
+        return repository.findByEmail(email).map(UsersServiceImpl::toResponse);
     }
 
     @Override
-    public Optional<UserResponseDTO> getByEmailAndProvider(String email, String provider) {
-        log.info("Fetching user by email: {} and provider: {}", email, provider);
-        return repository.findByEmailAndProvider(email, provider).map(mapper::toResponse);
+    public Optional<User> findEntityByEmail(String email) {
+        return repository.findByEmail(email);
     }
 
     @Override
@@ -56,28 +60,33 @@ public class UsersServiceImpl implements UsersService {
     public UserResponseDTO save(RegisterRequestDTO dto) {
         log.atInfo().log("Registering new user with email: {}", dto.email());
         validateEmailNotRegistered(dto.email());
-        var user = mapper.toUser(dto);
-        user.setPassword(passwordEncoder.encode(dto.password()));
-        user.setRole(DEFAULT_ROLE);
-        user.setVerified(false);
+        var user = User.builder()
+                .email(dto.email())
+                .username(dto.name())
+                .pictureUrl(dto.pictureUrl())
+                .password(passwordEncoder.encode(dto.password()))
+                .role(DEFAULT_ROLE)
+                .verified(false)
+                .provider("local")
+                .build();
         var savedUser = repository.save(user);
         log.atInfo().log("User registered successfully with id: {}", savedUser.getId());
-        return mapper.toResponse(savedUser);
+        return toResponse(savedUser);
     }
 
     @Override
     @Transactional
-    @CachePut(value = "users", key = "#result.id")
-    public UserResponseDTO saveOauth2User(Oauth2UserCreateDTO dto) {
-        log.atInfo().log("Registering OAuth2 user with email: {}, provider: {}", dto.email(), dto.provider());
-        validateEmailNotRegisteredForProvider(dto.email(), dto.provider());
-        var user = mapper.toUser(dto);
-        user.setRole(DEFAULT_ROLE);
-        user.setVerified(true);
-        user.setProvider(dto.provider());
-        var savedUser = repository.save(user);
-        log.atInfo().log("OAuth2 user registered successfully with id: {}", savedUser.getId());
-        return mapper.toResponse(savedUser);
+    public User createOAuthUser(String email, String username, String pictureUrl, String provider) {
+        log.atInfo().log("Provisioning OAuth2 user with email: {}, provider: {}", email, provider);
+        var user = User.builder()
+                .email(email)
+                .username(username)
+                .pictureUrl(pictureUrl)
+                .role(DEFAULT_ROLE)
+                .verified(true)
+                .provider(provider)
+                .build();
+        return repository.save(user);
     }
 
     @Override
@@ -89,20 +98,29 @@ public class UsersServiceImpl implements UsersService {
         user.setEmail(dto.email());
         user.setPassword(passwordEncoder.encode(dto.password()));
         repository.save(user);
-        revokedTokenService.revokeAllForUser(userId);
+        refreshTokenRepository.revokeAllActiveByUserId(userId);
         log.atInfo().log("User updated successfully: {}", userId);
-        return mapper.toResponse(user);
+        return toResponse(user);
     }
 
     @Override
     @Transactional
-    public UserResponseDTO updateVerifiedStatus(String email) {
+    @CacheEvict(value = "users", key = "#userId")
+    public void updatePassword(UUID userId, String encodedPassword) {
+        var user = findUserOrThrow(userId);
+        user.setPassword(encodedPassword);
+        repository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public User updateVerifiedStatus(String email) {
         log.atInfo().log("Updating verified status for email: {}", email);
         var user = findUserByEmailOrThrow(email);
         user.setVerified(true);
         repository.save(user);
         log.atInfo().log("User verified successfully: {}", email);
-        return mapper.toResponse(user);
+        return user;
     }
 
     @Override
@@ -113,8 +131,8 @@ public class UsersServiceImpl implements UsersService {
         if (!repository.existsById(id)) {
             throw new UserNotFoundException(id);
         }
+        refreshTokenRepository.revokeAllActiveByUserId(id);
         repository.deleteById(id);
-        revokedTokenService.revokeAllForUser(id);
         log.atInfo().log("User deleted successfully: {}", id);
     }
 
@@ -132,9 +150,15 @@ public class UsersServiceImpl implements UsersService {
         }
     }
 
-    private void validateEmailNotRegisteredForProvider(String email, String provider) {
-        if (repository.findByEmailAndProvider(email, provider).isPresent()) {
-            throw new EmailAlreadyRegisteredException(email + " (provider: " + provider + ")");
-        }
+    private static UserResponseDTO toResponse(User user) {
+        return UserResponseDTO.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .pictureUrl(user.getPictureUrl())
+                .role(user.getRole())
+                .verified(user.isVerified())
+                .provider(user.getProvider())
+                .build();
     }
 }

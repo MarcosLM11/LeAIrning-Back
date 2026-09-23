@@ -69,6 +69,12 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ProblemDetail handleInvalidRefreshToken(InvalidRefreshTokenException ex) {
+        log.warn("Invalid refresh token attempt");
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
     @ExceptionHandler(DocumentAccessDeniedException.class)
     public ProblemDetail handleDocumentAccessDenied(DocumentAccessDeniedException ex) {
         log.warn("Document access denied: {}", ex.getMessage());

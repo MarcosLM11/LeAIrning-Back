@@ -9,17 +9,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import javax.crypto.spec.SecretKeySpec;
+import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import static org.springframework.security.oauth2.jwt.NimbusJwtDecoder.withSecretKey;
 
 @Configuration(proxyBeanMethods = false)
@@ -29,7 +27,6 @@ public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
     private static final String JWT_SECURITY_FILTER_CHAIN = "jwtSecurityFilterChain";
 
     private static final String[] SECURED_PATTERNS = {
-            "/token/refresh",
             "/auth/logout",
             "/api/**",
             "/users/**",
@@ -40,11 +37,9 @@ public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
     };
 
     private final JwtSecretProperties properties;
-    private final RevokedTokenService revokedTokenService;
 
-    public JwtSecurityConfiguration(JwtSecretProperties properties, RevokedTokenService revokedTokenService) {
+    public JwtSecurityConfiguration(JwtSecretProperties properties) {
         this.properties = properties;
-        this.revokedTokenService = revokedTokenService;
     }
 
     @SneakyThrows
@@ -67,14 +62,12 @@ public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         var converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            var roles = jwt.getClaimAsStringList("roles");
-            var scope = jwt.getClaimAsString("scope");
-
-            Stream<String> roleStream = roles != null ? roles.stream().map(role -> "ROLE_" + role) : Stream.empty();
-            Stream<String> scopeStream = scope != null ? Stream.of("SCOPE_" + scope) : Stream.empty();
-
-            return Stream.concat(roleStream, scopeStream)
-                    .map(SimpleGrantedAuthority::new)
+            var roles = jwt.getClaimAsStringList(JwtService.ROLES);
+            if (roles == null) {
+                return List.of();
+            }
+            return roles.stream()
+                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                     .collect(Collectors.toList());
         });
         return converter;
@@ -82,24 +75,15 @@ public class JwtSecurityConfiguration extends AbstractSecurityConfiguration {
 
     @Bean
     JwtEncoder jwtEncoder() {
-        var secret = properties.getValue();
-        var bytes = secret.getBytes();
-        var immutableSecret = new ImmutableSecret<>(bytes);
-
-        return new NimbusJwtEncoder(immutableSecret);
+        var bytes = properties.getValue().getBytes();
+        return new NimbusJwtEncoder(new ImmutableSecret<>(bytes));
     }
 
     @Bean
     JwtDecoder jwtDecoder() {
-        var secret = properties.getValue();
-        var bytes = secret.getBytes();
+        var bytes = properties.getValue().getBytes();
         var algorithm = properties.getAlgorithm();
-        var originalKey = new SecretKeySpec(bytes, 0, bytes.length, algorithm);
-        var decoder = withSecretKey(originalKey).macAlgorithm(MacAlgorithm.valueOf(algorithm)).build();
-        var validator = new DelegatingOAuth2TokenValidator<>(
-                new JwtTimestampValidator(),
-                new RevokedTokenValidator(revokedTokenService));
-        decoder.setJwtValidator(validator);
-        return decoder;
+        var key = new SecretKeySpec(bytes, 0, bytes.length, algorithm);
+        return withSecretKey(key).macAlgorithm(MacAlgorithm.valueOf(algorithm)).build();
     }
 }

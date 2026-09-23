@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.jcache.configuration.CaffeineConfiguration;
 import com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider;
+import com.marcos.leairning.security.auth.AuthProperties;
 import com.marcos.leairning.security.auth.LoginLockoutProperties;
 import com.marcos.leairning.security.token.TokenPair;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,6 @@ import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import javax.cache.Caching;
-import java.time.Instant;
 import java.util.OptionalLong;
 import java.util.concurrent.TimeUnit;
 import static lombok.AccessLevel.PRIVATE;
@@ -68,14 +68,6 @@ public class CacheConfig {
     }
 
     @Bean
-    Cache<String, Instant> revokedTokensCache() {
-        return Caffeine.newBuilder()
-                .maximumSize(100_000)
-                .expireAfterWrite(7, TimeUnit.DAYS)
-                .build();
-    }
-
-    @Bean
     Cache<String, Integer> loginAttemptsCache() {
         return Caffeine.newBuilder()
                 .maximumSize(lockoutProperties.getCacheMaxSize())
@@ -89,11 +81,9 @@ public class CacheConfig {
         val provider = Caching.getCachingProvider(CaffeineCachingProvider.class.getName());
         val cacheManager = provider.getCacheManager();
         val config = new CaffeineConfiguration<>();
-
         config.setMaximumSize(OptionalLong.of(properties.getRateLimitMaximumSize()));
         config.setExpireAfterAccess(OptionalLong.of(properties.getRateLimitExpireAfterAccess().toNanos()));
         cacheManager.createCache("rate-limit-buckets", config);
-
         return cacheManager;
     }
 }

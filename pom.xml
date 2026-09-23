@@ -20,7 +20,6 @@
         <spring-ai.version>2.0.1</spring-ai.version>
         <spring-cloud.version>2025.1.1</spring-cloud.version>
         <spring-cloud-aws.version>4.0.2</spring-cloud-aws.version>
-        <jjwt.version>0.13.0</jjwt.version>
 
         <application.title>LeAIrningBack</application.title>
         <application.version>2.0.0</application.version>
@@ -72,6 +71,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-resource-server</artifactId>
+        </dependency>
 
         <!-- Email -->
         <dependency>
@@ -82,25 +85,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
-        </dependency>
-
-        <!-- JWT -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>${jjwt.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>${jjwt.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>${jjwt.version}</version>
-            <scope>runtime</scope>
         </dependency>
 
         <!-- AI Starter Ollama -->
@@ -152,6 +136,12 @@
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-tika-document-reader</artifactId>
+        </dependency>
+        <!-- Apache Tika language detection -->
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-langdetect-optimaize</artifactId>
+            <version>3.0.0</version>
         </dependency>
         <!-- PDFBox (renderizado de portada/thumbnail de PDFs) -->
         <dependency>
@@ -308,16 +298,6 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                        </path>
-                        <path>
-                            <groupId>org.mapstruct</groupId>
-                            <artifactId>mapstruct-processor</artifactId>
-                            <version>1.6.3</version>
-                        </path>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok-mapstruct-binding</artifactId>
-                            <version>0.2.0</version>
                         </path>
                         <path>
                             <groupId>org.springframework.boot</groupId>

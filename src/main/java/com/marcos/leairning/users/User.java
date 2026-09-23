@@ -2,16 +2,14 @@ package com.marcos.leairning.users;
 
 import com.marcos.leairning.util.jpa.AbstractJpaAuditableEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
+
 import java.util.UUID;
 
 @Table(name = "users")
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter @Setter @Entity
+@Getter @Setter @Entity @Builder
 public class User extends AbstractJpaAuditableEntity {
 
     @Id
