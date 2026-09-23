@@ -7,9 +7,9 @@ import java.util.UUID;
 public record UserResponseDTO(
         UUID id,
         String email,
-        String name,
+        String username,
         String pictureUrl,
-        String role,
+        UserRole role,
         Boolean verified,
         String provider
 ) {}

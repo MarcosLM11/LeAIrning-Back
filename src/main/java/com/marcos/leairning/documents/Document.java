@@ -1,6 +1,6 @@
 package com.marcos.leairning.documents;
 
-import com.marcos.leairning.util.jpa.AbstractJpaVersionedAuditableEntity;
+import com.marcos.leairning.util.jpa.AbstractJpaAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -20,7 +20,7 @@ import java.util.UUID;
 @ToString(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class Document extends AbstractJpaVersionedAuditableEntity {
+public class Document extends AbstractJpaAuditableEntity {
 
     @Id
     @Column(name = "id")

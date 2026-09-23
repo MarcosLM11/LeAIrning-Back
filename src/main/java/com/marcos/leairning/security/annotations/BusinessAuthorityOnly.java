@@ -8,6 +8,6 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@PreAuthorize("hasRole('USER') and hasAuthority('SCOPE_business')")
+@PreAuthorize("hasRole('ROLE_USER') and hasAuthority('SCOPE_business')")
 public @interface BusinessAuthorityOnly {
 }

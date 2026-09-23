@@ -1,11 +1,7 @@
 package com.marcos.leairning;
 
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
@@ -22,16 +18,4 @@ public class LeAIrningBackApplication {
     static void main(String[] args) {
         SpringApplication.run(LeAIrningBackApplication.class, args);
     }
-
-    @Bean
-    @Profile("!test")
-    ApplicationRunner go(FunctionCatalog catalog) {
-        Runnable composedFunction = catalog.lookup(null);
-        return _ -> {
-            if (composedFunction != null) {
-                composedFunction.run();
-            }
-        };
-    }
-
 }

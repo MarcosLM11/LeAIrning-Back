@@ -19,7 +19,9 @@ public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResol
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        return parameter.hasParameterAnnotation(CurrentUserId.class) && Objects.equals(parameter.getParameterType(), UUID.class);
+        return parameter
+                .hasParameterAnnotation(CurrentUserId.class) &&
+                Objects.equals(parameter.getParameterType(), UUID.class);
     }
 
     @Override
@@ -30,16 +32,12 @@ public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResol
         }
         var principal = authentication.getPrincipal();
         if (principal instanceof Jwt jwt) {
-            return doResolve(jwt);
+            var sub = jwt.getClaimAsString("sub");
+            if (isBlank(sub)) {
+                return null;
+            }
+            return fromString(sub);
         }
         return null;
-    }
-
-    private UUID doResolve(Jwt jwt) {
-        var sub = jwt.getClaimAsString("sub");
-        if (isBlank(sub)) {
-            return null;
-        }
-        return fromString(sub);
     }
 }

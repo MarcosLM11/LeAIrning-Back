@@ -1,4 +1,4 @@
-package com.marcos.leairning.util.template;
+package com.marcos.leairning.email;
 
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;

@@ -1,7 +1,6 @@
 package com.marcos.leairning.email;
 
 import com.marcos.leairning.security.auth.AuthProperties;
-import com.marcos.leairning.util.template.TemplateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;

@@ -1,7 +1,6 @@
 package com.marcos.leairning.email;
 
 import com.marcos.leairning.security.auth.AuthProperties;
-import com.marcos.leairning.util.template.TemplateService;
 import jakarta.mail.internet.MimeMessage;
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;

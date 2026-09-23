@@ -1,6 +1,6 @@
 package com.marcos.leairning.ai.quizz;
 
-import com.marcos.leairning.util.jpa.AbstractJpaVersionedAuditableEntity;
+import com.marcos.leairning.util.jpa.AbstractJpaAuditableEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
@@ -17,7 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Entity
 @Table(name = "quizzs")
-public class QuizzEntity extends AbstractJpaVersionedAuditableEntity {
+public class QuizzEntity extends AbstractJpaAuditableEntity {
 
     @Id
     @GeneratedValue(generator = "UUID")

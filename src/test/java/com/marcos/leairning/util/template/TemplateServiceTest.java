@@ -1,5 +1,6 @@
 package com.marcos.leairning.util.template;
 
+import com.marcos.leairning.email.TemplateService;
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

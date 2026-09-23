@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -30,4 +31,8 @@ public class AbstractJpaAuditableEntity {
     @LastModifiedDate
     @Column(name = "last_updated_timestamp")
     private Instant lastUpdatedTimestamp;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
 }
