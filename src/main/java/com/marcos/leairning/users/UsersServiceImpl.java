@@ -5,8 +5,8 @@ import com.marcos.leairning.exception.UserNotFoundException;
 import com.marcos.leairning.security.auth.RegisterRequestDTO;
 import com.marcos.leairning.security.jwt.RevokedTokenService;
 import com.marcos.leairning.security.oauth2.Oauth2UserCreateDTO;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -16,24 +16,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class UsersServiceImpl implements UsersService {
-
-    private static final Logger log = LoggerFactory.getLogger(UsersServiceImpl.class);
-    private static final String DEFAULT_ROLE = "USER";
-
     private final UsersRepository repository;
-    private final UsersMapper mapper;
     private final PasswordEncoder passwordEncoder;
     private final RevokedTokenService revokedTokenService;
-
-    public UsersServiceImpl(UsersRepository repository, UsersMapper mapper, PasswordEncoder passwordEncoder,  RevokedTokenService revokedTokenService) {
-        this.repository = repository;
-        this.mapper = mapper;
-        this.passwordEncoder = passwordEncoder;
-        this.revokedTokenService = revokedTokenService;
-    }
 
     @Override
     @Cacheable(value = "users", key = "#id")

@@ -2,7 +2,6 @@ package com.marcos.leairning.security.auth;
 
 import com.giffing.bucket4j.spring.boot.starter.context.RateLimiting;
 import com.github.benmanes.caffeine.cache.Cache;
-import com.marcos.leairning.email.EmailService;
 import com.marcos.leairning.exception.AccountLockedException;
 import com.marcos.leairning.exception.AccountNotVerifiedException;
 import com.marcos.leairning.exception.InvalidCredentialsException;
