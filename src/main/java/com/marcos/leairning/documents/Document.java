@@ -1,15 +1,18 @@
 package com.marcos.leairning.documents;
 
-import com.marcos.leairning.util.jpa.AbstractJpaAuditableEntity;
+import com.marcos.leairning.jpa.JpaAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.*;
-
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.util.UUID;
 
 @Getter
@@ -17,20 +20,28 @@ import java.util.UUID;
 @Entity
 @Builder
 @Table(name = "documents")
-@ToString(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class Document extends AbstractJpaAuditableEntity {
+public class Document extends JpaAuditableEntity {
 
     @Id
     @Column(name = "id")
     @GeneratedValue(generator = "UUID")
     private UUID id;
+
+    @Column(name = "user_id", nullable = false)
     private UUID userId;
+
+    @Column(name = "file_name", nullable = false)
     private String fileName;
+
+    @Column(name = "content_type")
     private String contentType;
+
+    @Column(name = "size")
     private Long size;
-    private String storagePath;
-    @Enumerated(EnumType.STRING)
-    private DocumentStatus status;
+
+    @JdbcTypeCode(SqlTypes.VARBINARY)
+    @Column(name = "content", columnDefinition = "bytea")
+    private byte[] content;
 }

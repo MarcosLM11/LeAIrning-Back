@@ -1,4 +1,4 @@
-package com.marcos.leairning.util.jpa;
+package com.marcos.leairning.jpa;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
@@ -20,7 +20,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class AbstractJpaAuditableEntity {
+public class JpaAuditableEntity {
 
     @JsonIgnore
     @CreatedDate

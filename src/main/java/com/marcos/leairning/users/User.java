@@ -1,40 +1,33 @@
 package com.marcos.leairning.users;
 
-import com.marcos.leairning.util.jpa.AbstractJpaAuditableEntity;
-import jakarta.persistence.*;
-import lombok.*;
-
+import com.marcos.leairning.jpa.JpaAuditableEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import java.util.UUID;
 
 @Table(name = "users")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter @Setter @Entity @Builder
-public class User extends AbstractJpaAuditableEntity {
+public class User extends JpaAuditableEntity {
 
     @Id
     @Column(name = "id")
     @GeneratedValue(generator = "UUID")
     private UUID id;
 
-    @Column(name = "email", unique = true)
+    @Column(name = "email", unique = true, nullable = false)
     private String email;
-
-    @Column(name = "name")
+    @Column(name = "username", nullable = false)
     private String username;
-    @Column(name = "picture_url")
-    private String pictureUrl;
-
-    @Column(name = "role")
-    @Enumerated(EnumType.STRING)
-    private UserRole role;
-
-    @Column(name = "password")
+    @Column(name = "password", nullable = false)
     private String password;
-
-    @Column(name = "verified", nullable = false)
-    private boolean verified;
-
-    @Column(name = "provider", nullable = false)
-    private String provider = "local";
 }

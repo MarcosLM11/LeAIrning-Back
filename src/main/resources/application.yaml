@@ -1,166 +1,21 @@
-leairning:
-  cache:
-    caffeine:
-      documents-maximum-size: 1000
-      documents-expire-after-access: 60s
-      users-maximum-size: 1000
-      users-expire-after-access: 60s
-      rate-limit-maximum-size: 100000
-      rate-limit-expire-after-access: 1h
-  pipeline:
-    chunk-size: 500
-    keep-separator: false
-    min-chunk-length: 10
-  jwt:
-    access-token-ttl: 30m
-    refresh-token-ttl: 7d
-  secret:
-    jwt:
-      value: ${JWT_SECRET:ThisIsADevelopmentSecretKeyThatShouldBeAtLeast64BytesLongForHS512Algorithm!}
-      algorithm: HS512
-  auth:
-    frontend-url: ${FRONTEND_URL:http://localhost:4200}
-    trusted-proxies: []
-  security:
-    login-lockout:
-      max-attempts: 5
-      lockout-duration: 15m
-      cache-max-size: 100000
-  ai:
-    chat:
-      max-messages: 1000
-
 spring:
   application:
     name: LeAIrning-Back
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-            scope: openid, profile, email
-          github:
-            client-id: ${GITHUB_CLIENT_ID}
-            client-secret: ${GITHUB_CLIENT_SECRET}
-            scope: read:user, user:email
-        provider:
-          google:
-            issuer-uri: https://accounts.google.com
-          github:
-            authorization-uri: https://github.com/login/oauth/authorize
-            token-uri: https://github.com/login/oauth/access_token
-            user-info-uri: https://api.github.com/user
-            user-name-attribute: id
-  mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:marcoslopezmarinn@gmail.com}
-    password: ${MAIL_PASSWORD:}
-    from: ${MAIL_FROM:noreply@leairning.com}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-  thymeleaf:
-    prefix: classpath:/templates/
-    suffix: .html
-    mode: HTML
-    encoding: UTF-8
-    cache: false
+
   datasource:
     url: jdbc:postgresql://localhost:5432/leairningdb
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
+
   jpa:
     show-sql: false
     open-in-view: false
     hibernate:
-      ddl-auto: none
-  data:
-    web:
-      pageable:
-        default-page-size: 20
-        max-page-size: 100
-  cache:
-    type: caffeine
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-    baseline-version: 0
-    validate-on-migrate: true
+      ddl-auto: update
+
   servlet:
     multipart:
       enabled: true
       max-file-size: 50MB
       max-request-size: 50MB
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:openai}
-  ai:
-    chat:
-      observations:
-        log-prompt: true
-        log-completion: true
-      memory:
-        repository:
-          jdbc:
-            initialize-schema: never  # Managed by Flyway migration V5
-    vectorstore:
-      qdrant:
-        host: localhost
-        port: 6334
-        collection-name: documents
-        initialize-schema: true
-  cloud:
-    compatibility-verifier:
-      enabled: false
-    function:
-      definition: fileSupplier|metadataEnricher|documentReader|splitter|vectorStoreConsumer
-      web:
-        export:
-          enabled: false
-    integration:
-      poller:
-        fixed-delay: 5000
-        max-messages-per-poll: 1
-
-bucket4j:
-  enabled: true
-  cache-to-use: jcache
-  methods:
-    - name: default
-      cache-name: rate-limit-buckets
-      rate-limit:
-        cache-key: '@rateLimitKeyProvider.getIp()'
-        bandwidths:
-          - capacity: 60
-            time: 1
-            unit: minutes
-
-management:
-  otlp:
-    metrics:
-      export:
-        enabled: false
-    tracing:
-      export:
-        enabled: false
-
-logging:
-  level:
-    org.apache.fontbox: ERROR
-    org.apache.pdfbox: WARN
-    org.springframework.ai: DEBUG
-    org.springframework.ai.chat.client.DefaultChatClient: DEBUG
-    org.springframework.ai.openai: DEBUG
-    org.springframework.ai.ollama: DEBUG
-    org.zalando.logbook: TRACE
-
-# Application metadata for banner
-application:
-  version: 1.0.0
-  author: Marcos López Marín

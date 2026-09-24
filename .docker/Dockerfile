@@ -2,12 +2,12 @@ FROM bellsoft/liberica-runtime-container:jdk-all-25-musl AS build
 
 WORKDIR /app
 
-COPY pom.xml mvnw ./
-COPY .mvn .mvn
+COPY ../pom.xml mvnw ./
+COPY ../.mvn .mvn
 
 RUN ./mvnw dependency:go-offline -B
 
-COPY src src
+COPY ../src src
 
 RUN ./mvnw clean package -DskipTests -B && \
   jdeps --ignore-missing-deps \

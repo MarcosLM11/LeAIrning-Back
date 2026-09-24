@@ -1,6 +1,7 @@
 package com.marcos.leairning.documents;
 
 import lombok.Builder;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -11,7 +12,5 @@ public record DocumentResponseDTO(
         String fileName,
         String contentType,
         Long size,
-        String storagePath,
-        DocumentStatus status,
         Instant createdTimestamp
 ) {}

@@ -1,12 +1,8 @@
 package com.marcos.leairning.users;
 
 import com.marcos.leairning.exception.NotFoundException;
-import com.marcos.leairning.security.token.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -17,82 +13,52 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class UsersService {
-    private final UsersRepository repository;
-    private final PasswordEncoder passwordEncoder;
-    private final RefreshTokenRepository refreshTokenRepository;
 
-    @Cacheable(value = "users", key = "#id")
+    private final UsersRepository repository;
+
+    @Transactional
+    public UserResponseDTO create(UserRequestDTO dto) {
+        log.info("Creating user {}", dto.email());
+        var user = User.builder()
+                .email(dto.email())
+                .username(dto.username())
+                .password(dto.password())
+                .build();
+        return mapToDto(repository.save(user));
+    }
+
     public UserResponseDTO get(UUID id) {
-        return toResponse(findUserOrThrow(id));
+        var user = repository.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
+        return mapToDto(user);
     }
 
     public List<UserResponseDTO> getAll() {
-        return repository.findAll().stream().map(UsersService::toResponse).toList();
-    }
-
-    public User getEntityById(UUID id) {
-        return findUserOrThrow(id);
-    }
-
-    public User getEntityByEmail(String email) {
-        return repository.findByEmail(email).orElseThrow(() -> new NotFoundException("User not found: " + email));
+        return repository.findAll().stream().map(UsersService::mapToDto).toList();
     }
 
     @Transactional
-    @CacheEvict(value = "users", key = "#userId")
-    public UserResponseDTO update(UUID userId, UserUpdateDTO dto) {
-        var user = findUserOrThrow(userId);
-        if (dto.email() != null) {
-            user.setEmail(dto.email());
-        }
-        if (dto.password() != null) {
-            user.setPassword(passwordEncoder.encode(dto.password()));
-            refreshTokenRepository.revokeAllActiveByUserId(userId);
-        }
-        log.info("Updating user {}", userId);
-        return toResponse(repository.save(user));
+    public UserResponseDTO update(UUID id, UserRequestDTO dto) {
+        log.info("Updating user {}", id);
+        var user = repository.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
+        user.setEmail(dto.email());
+        user.setUsername(dto.username());
+        user.setPassword(dto.password());
+        return mapToDto(repository.save(user));
     }
 
     @Transactional
-    @CacheEvict(value = "users", key = "#userId")
-    public void updatePassword(UUID userId, String encodedPassword) {
-        var user = findUserOrThrow(userId);
-        user.setPassword(encodedPassword);
-        repository.save(user);
-    }
-
-    @Transactional
-    public User updateVerifiedStatus(String email) {
-        var user = getEntityByEmail(email);
-        user.setVerified(true);
-        log.info("User email verified: {}", email);
-        return repository.save(user);
-    }
-
-    @Transactional
-    @CacheEvict(value = "users", key = "#id")
     public void delete(UUID id) {
-        if (!repository.existsById(id)) {
-            throw new NotFoundException("User not found: " + id);
-        }
-        refreshTokenRepository.revokeAllActiveByUserId(id);
-        repository.deleteById(id);
         log.info("Deleted user {}", id);
+        if (!repository.existsById(id)) throw new NotFoundException("User not found: " + id);
+        repository.deleteById(id);
     }
 
-    private User findUserOrThrow(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new NotFoundException("User not found: " + id));
-    }
-
-    private static UserResponseDTO toResponse(User user) {
+    private static UserResponseDTO mapToDto(User user) {
         return UserResponseDTO.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .username(user.getUsername())
-                .pictureUrl(user.getPictureUrl())
-                .role(user.getRole())
-                .verified(user.isVerified())
-                .provider(user.getProvider())
+                .createdTimestamp(user.getCreatedTimestamp())
                 .build();
     }
 }
