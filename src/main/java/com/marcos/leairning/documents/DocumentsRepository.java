@@ -7,8 +7,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface DocumentsRepository extends JpaRepository<Document, UUID> {
-
     List<Document> findByUserId(UUID userId);
-
     Optional<Document> findByIdAndUserId(UUID id, UUID userId);
 }

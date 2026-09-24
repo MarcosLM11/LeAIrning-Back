@@ -1,5 +1,6 @@
 package com.marcos.leairning.documents;
 
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/users/{userId}/documents")
+@RequestMapping("/documents/{userId}")
 public class DocumentsController {
 
     private final DocumentsService service;
@@ -49,12 +50,12 @@ public class DocumentsController {
     @GetMapping("/{documentId}/download")
     public ResponseEntity<Resource> downloadDocument(@PathVariable UUID userId, @PathVariable UUID documentId) throws IOException {
         var document = service.downloadDocument(userId, documentId);
-        var contentDisposition = ContentDisposition.attachment().filename(document.getFilename()).build();
+        var contentDisposition = ContentDisposition.attachment().filename(document.getFileName()).build();
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(document.getFilename().split(".")[1]))
-                .contentLength(document.contentLength())
+                .contentLength(document.getSize())
+                .contentType(MediaType.parseMediaType(document.getContentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
-                .body(document);
+                .body(new ByteArrayResource(document.getContent()));
     }
 
     @DeleteMapping("/{documentId}")

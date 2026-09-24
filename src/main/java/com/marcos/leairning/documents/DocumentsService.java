@@ -1,11 +1,9 @@
 package com.marcos.leairning.documents;
 
 import com.marcos.leairning.exception.NotFoundException;
-import lombok.RequiredArgsConstructor;
+import com.marcos.leairning.ingestion.IngestEvent;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,11 +14,15 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@Transactional(readOnly = true)
-@RequiredArgsConstructor
 public class DocumentsService {
 
     private final DocumentsRepository repository;
+    private final ApplicationEventPublisher publisher;
+
+    public DocumentsService(DocumentsRepository repository, ApplicationEventPublisher publisher) {
+        this.repository = repository;
+        this.publisher = publisher;
+    }
 
     @Transactional
     public DocumentResponseDTO upload(UUID userId, MultipartFile file) {
@@ -34,7 +36,9 @@ public class DocumentsService {
                 .size(file.getSize())
                 .content(readBytes(file))
                 .build();
-        return mapToDto(repository.save(document));
+        document = repository.save(document);
+        publisher.publishEvent(new IngestEvent(document.getId()));
+        return mapToDto(document);
     }
 
     public List<DocumentResponseDTO> getDocuments(UUID userId) {
@@ -45,8 +49,8 @@ public class DocumentsService {
         return mapToDto(findDocumentOrThrow(userId, documentId));
     }
 
-    public Resource downloadDocument(UUID userId, UUID documentId) {
-        return new ByteArrayResource(findDocumentOrThrow(userId, documentId).getContent());
+    public Document downloadDocument(UUID userId, UUID documentId) {
+        return findDocumentOrThrow(userId, documentId);
     }
 
     @Transactional
