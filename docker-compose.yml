@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: 'postgres:latest'
+    image: 'pgvector/pgvector:pg18'
     container_name: learning-postgres
     environment:
       POSTGRES_USER: postgres
@@ -9,7 +9,7 @@ services:
       - '5432:5432'
     volumes:
       - postgres-data:/var/lib/postgresql
-      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+      - ./.docker/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
 
 volumes:
   postgres-data:
